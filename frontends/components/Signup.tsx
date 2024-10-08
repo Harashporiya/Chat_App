@@ -1,7 +1,34 @@
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native'
-import React from 'react'
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native'
+import React, { useState } from 'react'
+import axios from 'axios'
+import { BACKEND_URL } from '../API_BACKENDS/Backend_API'
 
 const Signup = () => {
+    const [username, setUserName] = useState('')
+    const [email, setEmail] = useState('')
+    const [password, setPassowrd] = useState('')
+
+    const handelSubmit=async()=>{
+        if(!username.trim() || !email.trim() || !password.trim()){
+            Alert.alert("error", "All fields are requirdes")
+            return;
+        }
+        try {
+            const res = await axios.post(`${BACKEND_URL}/api/signup`,{
+                username,
+                email,
+                password,
+            })
+            // console.log(res.data)
+            Alert.alert("success", "Account Create Successfull")
+            setUserName('')
+            setEmail('')
+            setPassowrd('')
+        } catch (error) {
+            console.log("ERROR",error)
+            Alert.alert("error", "Internal server error")
+        }
+    }
     return (
         <>
             <View style={styles.container}>
@@ -9,17 +36,23 @@ const Signup = () => {
                 <TextInput
                     placeholder='Username'
                     style={styles.input}
+                    value={username}
+                    onChangeText={(text)=>setUserName(text)}
                 />
 
                 <TextInput
                     placeholder='@example.com'
                     style={styles.input}
+                    value={email}
+                    onChangeText={(text)=>setEmail(text)}
                 />
                 <TextInput
                     placeholder='password'
                     style={styles.input}
+                    value={password}
+                    onChangeText={(text)=>setPassowrd(text)}
                 />
-                <TouchableOpacity style={styles.button}>
+                <TouchableOpacity style={styles.button} onPress={()=>handelSubmit()}>
                     <Text style={styles.btn}>Create account new</Text>
                 </TouchableOpacity>
             </View>
