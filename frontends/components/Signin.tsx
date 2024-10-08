@@ -1,7 +1,30 @@
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, TouchableHighlightBase } from 'react-native'
-import React from 'react'
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, TouchableHighlightBase, Alert } from 'react-native'
+import React, { useState } from 'react'
+import axios from 'axios'
+import { BACKEND_URL } from '../API_BACKENDS/Backend_API'
 
 const Signin = () => {
+    const [email, setEmail] = useState('')
+    const [password, setPassowrd] = useState('')
+
+    const handelSubmit=async()=>{
+        if(!email.trim() || !password.trim()){
+            Alert.alert("error", "All fields are requireds")
+            return;
+        }
+        try {
+            const res = await axios.post(`${BACKEND_URL}/api/signin`,{
+                email,
+                password
+            })
+            Alert.alert("success","Signin Successfull");
+            console.log(res.data)
+        } catch (error) {
+            console.log("ERROR",error)
+            Alert.alert("error", "Internal server error")
+            
+        }
+    }
     return (
         <>
             <View style={styles.container}>
@@ -10,12 +33,16 @@ const Signin = () => {
                 <TextInput
                     placeholder='@example.com'
                     style={styles.input}
+                    value={email}
+                    onChangeText={(text)=>setEmail(text)}
                 />
                 <TextInput
                     placeholder='password'
                     style={styles.input}
+                    value={password}
+                    onChangeText={(text)=>setPassowrd(text)}
                 />
-                <TouchableOpacity style={styles.button}>
+                <TouchableOpacity style={styles.button} onPress={()=>handelSubmit()}>
                     <Text style={styles.btn}>Signin</Text>
                 </TouchableOpacity>
             </View>
