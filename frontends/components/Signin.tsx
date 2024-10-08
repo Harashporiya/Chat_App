@@ -2,11 +2,13 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, TouchableHighlight
 import React, { useState } from 'react'
 import axios from 'axios'
 import { BACKEND_URL } from '../API_BACKENDS/Backend_API'
+import { NavigationProp, useNavigation } from '@react-navigation/native'
+import { RouterType } from './Navigation'
 
 const Signin = () => {
     const [email, setEmail] = useState('')
     const [password, setPassowrd] = useState('')
-
+    const navigation = useNavigation<NavigationProp<RouterType>>() 
     const handelSubmit=async()=>{
         if(!email.trim() || !password.trim()){
             Alert.alert("error", "All fields are requireds")
@@ -18,7 +20,10 @@ const Signin = () => {
                 password
             })
             Alert.alert("success","Signin Successfull");
-            console.log(res.data)
+            // console.log(res.data)
+            setEmail('')
+            setPassowrd('')
+            navigation.navigate("ChatApp")
         } catch (error) {
             console.log("ERROR",error)
             Alert.alert("error", "Internal server error")
