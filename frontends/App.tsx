@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Home from './components/Home';
 import Signin from "./components/Signin"
 import Signup from "./components/Signup"
+import ChatApp from './components/chat';
 
 const Stack = createNativeStackNavigator()
 
@@ -31,6 +32,11 @@ export default function App() {
         <Stack.Screen
           name='Signup'
           component={Signup} options={{
+            headerStyle: { backgroundColor: "deepskyblue" },
+            headerTintColor: "white"
+          }} />
+          <Stack.Screen name='ChatApp' component={ChatApp}
+          options={{
             headerStyle: { backgroundColor: "deepskyblue" },
             headerTintColor: "white"
           }} />
