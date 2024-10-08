@@ -22,7 +22,7 @@ const Home = () => {
                     <Text style={styles.button}>Sign in</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => navigation.navigate("Signup")} style={styles.btn1}>
-                    <Text style={styles.button}>Sign up</Text>
+                    <Text style={styles.button}>Create account new</Text>
                 </TouchableOpacity>
                 <View>
                     <Text style={styles.text}>Signin or Create an Account to get Started</Text>
