@@ -20,7 +20,7 @@ const Signup = () => {
                     style={styles.input}
                 />
                 <TouchableOpacity style={styles.button}>
-                    <Text style={styles.btn}>Signin</Text>
+                    <Text style={styles.btn}>Create account new</Text>
                 </TouchableOpacity>
             </View>
 
