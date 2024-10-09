@@ -1,11 +1,16 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
+import FooterPage from "./footer";
 
 const ChatApp=()=>{
     return(
-        <View>
+        <>
+        <ScrollView>
            <Text>CHAT APP</Text>
-        </View>
+           
+        </ScrollView>
+        <FooterPage/>
+        </>
     )
 }
 
