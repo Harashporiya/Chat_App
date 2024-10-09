@@ -23,7 +23,7 @@ const Signin = () => {
             // console.log(res.data)
             setEmail('')
             setPassowrd('')
-            navigation.navigate("ChatApp")
+            navigation.navigate("Chats")
         } catch (error) {
             console.log("ERROR",error)
             Alert.alert("error", "Internal server error")

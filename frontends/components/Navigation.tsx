@@ -2,7 +2,7 @@
 export type RouterType={
     Signin:undefined;
     Signup:undefined;
-    ChatApp:undefined;
+    Chats:undefined;
     Notifications:undefined;
     Users:undefined;
     Settings:undefined;
