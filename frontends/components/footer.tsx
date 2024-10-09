@@ -16,7 +16,7 @@ const FooterPage = () => {
   return (
     <View style={styles.container}>
       <View style={styles.item} >
-        <Ionicons name="chatbox-sharp" size={26} color={selectedIcon === "chat"? "#2c9cdb":"gray"} onPress={() => (handleShow("chat"),navigation.navigate("ChatApp"))} />
+        <Ionicons name="chatbox-sharp" size={26} color={selectedIcon === "chat"? "#2c9cdb":"gray"} onPress={() => (handleShow("chat"),navigation.navigate("Chats"))} />
         {selectedIcon === "chat" && <Text style={{color:"#2c9cdb"}}>Chat</Text>}
       </View>
       <View style={styles.item}>

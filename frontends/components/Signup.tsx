@@ -28,7 +28,7 @@ const Signup = () => {
             setUserName('')
             setEmail('')
             setPassowrd('')
-            navigation.navigate("ChatApp")
+            navigation.navigate("Chats")
         } catch (error) {
             console.log("ERROR",error)
             Alert.alert("error", "Internal server error")
