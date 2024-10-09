@@ -13,29 +13,29 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        <Stack.Screen
+        {/* <Stack.Screen
           name='Home'
           component={Home}
           options={{
             headerStyle: { backgroundColor: "deepskyblue" },
             headerTintColor: "white"
-          }} />
-
+          }} /> */}
+{/* 
         <Stack.Screen
           name='Signin'
           component={Signin}
           options={{
             headerStyle: { backgroundColor: "deepskyblue" },
             headerTintColor: "white"
-          }} />
+          }} /> */}
 
-        <Stack.Screen
+        {/* <Stack.Screen
           name='Signup'
           component={Signup} options={{
             headerStyle: { backgroundColor: "deepskyblue" },
             headerTintColor: "white"
-          }} />
-          <Stack.Screen name='ChatApp' component={ChatApp}
+          }} /> */}
+          <Stack.Screen name='Chats' component={ChatApp}
           options={{
             headerStyle: { backgroundColor: "deepskyblue" },
             headerTintColor: "white"
