@@ -9,6 +9,7 @@ import ChatApp from './components/chat';
 import NotificationsPage from './components/Notifications/Notifications';
 import UsersPage from './components/Users/Users';
 import SettingPage from './components/Settings/SettingPage';
+import ChatPageUser from './components/PageUserChat/Chat';
 
 const Stack = createNativeStackNavigator()
 
@@ -58,6 +59,11 @@ export default function App() {
             headerStyle: { backgroundColor: "deepskyblue" },
             headerTintColor: "white"
           }} />
+          <Stack.Screen name='ChatUser' component={ChatPageUser}
+          options={{
+            headerStyle: { backgroundColor: "deepskyblue" },
+            headerTintColor: "white"
+          }}/>
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from "react-native";
 import FooterPage from "./footer";
 import axios from "axios";
 import { BACKEND_URL } from "../API_BACKENDS/Backend_API";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NavigationProp, useNavigation, useRoute } from "@react-navigation/native";
+import { RouterType } from "./Navigation";
 
 interface User {
   _id: string;
   username: string;
+  profileImage: string;
 }
 
 interface UserData {
@@ -18,11 +21,15 @@ interface UserData {
 const ChatApp = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [idUser, setUserId] = useState<string | null>(null);
+   
+  const navigation = useNavigation<NavigationProp<RouterType>>();
+  const route = useRoute();
 
   useEffect(() => {
     const fetchUsersData = async () => {
-        const userId = await AsyncStorage.getItem("UserId")
-        setUserId(userId)
+      const userId = await AsyncStorage.getItem("UserId");
+      setUserId(userId);
+
       try {
         const res = await axios.get(`${BACKEND_URL}/api/all/users`);
         setUserData(res.data);
@@ -31,44 +38,46 @@ const ChatApp = () => {
       }
     };
     fetchUsersData();
-   
   }, []);
 
-//    async function h(){
-//     const userId = await AsyncStorage.getItem("UserId")
-//     console.log(userId)
-//    }
-//    h()
-   
-   
+  const showDataByUser = (user: User) => {
+    navigation.navigate("ChatUser", { 
+        id: user._id, 
+        username: user.username,
+        profileImage:user.profileImage
+    });
+  };
+
   return (
     <>
       <ScrollView style={styles.scrollView}>
         <View style={styles.container}>
           <Text style={styles.header}>Messages</Text>
-          {userData?.allUser.filter(user=>user._id !== idUser).map((user) => (
-            <View key={user._id} style={styles.userCard}>
-              <View style={styles.avatar}>
-                <Image
-                  style={styles.image}
-                  source={{
-                    uri: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTtuphMb4mq-EcVWhMVT8FCkv5dqZGgvn_QiA&s"
-                  }}
-                />
-                <View style={styles.onlineIndicator} />
-              </View>
-              <View style={styles.userInfo}>
-                <Text style={styles.username}>{user.username}</Text>
-                <Text style={styles.lastMessage}>Hey, how are you?</Text>
-              </View>
-              <View style={styles.timeContainer}>
-                <Text style={styles.timeText}>2:30 PM</Text>
-                <View style={styles.unreadBadge}>
-                  <Text style={styles.unreadText}>2</Text>
+          {userData?.allUser.filter(user => user._id !== idUser).map(user => (
+              <TouchableOpacity key={user._id} onPress={() => showDataByUser(user)}>
+                <View style={styles.userCard}>
+                  <View style={styles.avatar}>
+                    <Image
+                      style={styles.image}
+                      source={{
+                        uri: user.profileImage 
+                      }}
+                    />
+                    <View style={styles.onlineIndicator} />
+                  </View>
+                  <View style={styles.userInfo}>
+                    <Text style={styles.username}>{user.username}</Text>
+                    <Text style={styles.lastMessage}>Hey, how are you?</Text>
+                  </View>
+                  <View style={styles.timeContainer}>
+                    <Text style={styles.timeText}>2:30 PM</Text>
+                    <View style={styles.unreadBadge}>
+                      <Text style={styles.unreadText}>2</Text>
+                    </View>
+                  </View>
                 </View>
-              </View>
-            </View>
-          ))}
+              </TouchableOpacity>
+            ))}
         </View>
       </ScrollView>
       <FooterPage />
