@@ -23,8 +23,8 @@ export default function App() {
             headerStyle: { backgroundColor: "deepskyblue" },
             headerTintColor: "white"
           }} /> */}
-{/* 
-        <Stack.Screen
+
+        {/* <Stack.Screen
           name='Signin'
           component={Signin}
           options={{
