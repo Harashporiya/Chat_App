@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
 import FooterPage from "./footer";
 import axios from "axios";
 import { BACKEND_URL } from "../API_BACKENDS/Backend_API";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface User {
   _id: string;
@@ -16,9 +17,12 @@ interface UserData {
 
 const ChatApp = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [idUser, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUsersData = async () => {
+        const userId = await AsyncStorage.getItem("UserId")
+        setUserId(userId)
       try {
         const res = await axios.get(`${BACKEND_URL}/api/all/users`);
         setUserData(res.data);
@@ -27,14 +31,22 @@ const ChatApp = () => {
       }
     };
     fetchUsersData();
+   
   }, []);
 
+//    async function h(){
+//     const userId = await AsyncStorage.getItem("UserId")
+//     console.log(userId)
+//    }
+//    h()
+   
+   
   return (
     <>
       <ScrollView style={styles.scrollView}>
         <View style={styles.container}>
           <Text style={styles.header}>Messages</Text>
-          {userData?.allUser.map((user) => (
+          {userData?.allUser.filter(user=>user._id !== idUser).map((user) => (
             <View key={user._id} style={styles.userCard}>
               <View style={styles.avatar}>
                 <Image

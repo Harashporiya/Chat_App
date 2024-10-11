@@ -4,7 +4,7 @@ import axios from 'axios'
 import { BACKEND_URL } from '../API_BACKENDS/Backend_API'
 import { NavigationProp, useNavigation } from '@react-navigation/native'
 import { RouterType } from './Navigation'
-
+import AsyncStorage from '@react-native-async-storage/async-storage'
 const Signin = () => {
     const [email, setEmail] = useState('')
     const [password, setPassowrd] = useState('')
@@ -19,6 +19,7 @@ const Signin = () => {
                 email,
                 password
             })
+            AsyncStorage.setItem("UserId", res.data.user._id)
             Alert.alert("success","Signin Successfull");
             // console.log(res.data)
             setEmail('')

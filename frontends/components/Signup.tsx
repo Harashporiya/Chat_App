@@ -4,7 +4,7 @@ import axios from 'axios'
 import { BACKEND_URL } from '../API_BACKENDS/Backend_API'
 import { NavigationProp, useNavigation } from '@react-navigation/native'
 import { RouterType } from './Navigation'
-
+import AsyncStorage from '@react-native-async-storage/async-storage'
 const Signup = () => {
     const [username, setUserName] = useState('')
     const [email, setEmail] = useState('')
@@ -25,6 +25,8 @@ const Signup = () => {
             })
             // console.log(res.data)
             Alert.alert("success", "Account Create Successfull")
+            
+            AsyncStorage.setItem("UserId", res.data.createUser._id)
             setUserName('')
             setEmail('')
             setPassowrd('')
