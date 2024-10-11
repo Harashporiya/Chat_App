@@ -6,4 +6,8 @@ export type RouterType={
     Notifications:undefined;
     Users:undefined;
     Settings:undefined;
+    ChatUser:{id:string,
+        username:string,
+        profileImage:string
+    };
 }
