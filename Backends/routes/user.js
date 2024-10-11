@@ -52,4 +52,16 @@ router.post("/signin", async (req, res) => {
   }
 });
 
+router.get("/all/users", async(req,res)=>{
+  try {
+    const allUser = await User.findOne({})
+    if(!allUser){
+      return res.status(404).json({message:"Users not found"})
+    }
+    return res.status(200).json({message:"All user fetch", allUser})
+  } catch (error) {
+    return res.status(500).json({message:"Failed the fetch data"})
+  }
+})
+
 module.exports = router;
