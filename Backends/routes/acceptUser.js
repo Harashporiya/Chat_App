@@ -5,7 +5,7 @@ const router = express.Router();
 router.post("/userId", async (req, res) => {
     const { loginUserId, username, sentFriendId, sentFriendUsername } = req.body;
     
-    console.log(req.body);
+    // console.log(req.body);
     
     try {
         const userNew = await AcceptUser.create({ loginUserId, username, sentFriendId, sentFriendUsername });
