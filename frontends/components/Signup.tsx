@@ -27,6 +27,7 @@ const Signup = () => {
             Alert.alert("success", "Account Create Successfull")
             
             AsyncStorage.setItem("UserId", res.data.createUser._id)
+            AsyncStorage.setItem("Username", res.data.createUser.username)
             setUserName('')
             setEmail('')
             setPassowrd('')
