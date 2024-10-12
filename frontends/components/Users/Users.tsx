@@ -25,6 +25,8 @@ const UserPage = () => {
   const [acceptedUsers, setAcceptedUsers] = useState<string[]>([]);
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
+  const [alreadySentRequest,setAlreadySentRequest] = useState(false);
+
   useEffect(() => {
     const fetchUsersData = async () => {
       const userId = await AsyncStorage.getItem("UserId");
@@ -43,40 +45,58 @@ const UserPage = () => {
   const userIdSave = async (friendId1: string, friendUsername: string) => {
     const loginUserId = await AsyncStorage.getItem("UserId");
     const username = await AsyncStorage.getItem("Username");
-
+  
     if (!loginUserId || !username) {
       Alert.alert("Error", "User ID or username not found.");
       return;
     }
-    
+  
+   
+    // if (acceptedUsers.includes(friendId1)) {
+    //   Alert.alert("Error", "You have already sent a friend request.");
+    //   return;
+    // }
+  
     setLoadingId(friendId1);
-
+  
     try {
+    
       const response = await axios.get(`${BACKEND_URL}/api/sent`);
-      const existingRequests = response.data.userdata;
 
-      const requestExists = existingRequests.some((request: { userId: string; sentFriendId: string; }) =>
-        (request.userId === loginUserId && request.sentFriendId === friendId1) ||
-        (request.sentFriendId === loginUserId && request.userId === friendId1)
+     
+
+      const existingRequests = response.data.userdata || [];
+  
+      const requestExists = existingRequests.some(
+        (request: { loginUserId: string; sentFriendId: string }) =>(request.loginUserId === loginUserId && request.sentFriendId === friendId1) ||
+          (request.sentFriendId === loginUserId && request.loginUserId === friendId1)
       );
-
+  
       if (requestExists) {
         Alert.alert("Error", "Friend request already exists.");
-        setLoadingId(null);
         return;
       }
-
-      const res = await axios.post(`${BACKEND_URL}/api/userId`, { loginUserId, username, sentFriendId: friendId1, sentFriendUsername: friendUsername });
-      console.log("hello comes");
-      // setAcceptedUsers([...acceptedUsers, friendId]);
+  
+    
+      await axios.post(`${BACKEND_URL}/api/userId`, {
+        loginUserId,
+        username,
+        sentFriendId: friendId1,
+        sentFriendUsername: friendUsername,
+      });
+  
+     
+      setAcceptedUsers((prev) => [...prev, friendId1]);
+      Alert.alert("Success", "Friend request sent!");
     } catch (error) {
-      console.log("ERROR", error);
+      console.error("Error sending friend request:", error);
       Alert.alert("Error", "An error occurred while sending the request.");
-      
     } finally {
+      
       setLoadingId(null);
     }
   };
+  
 
   return (
     <>
@@ -97,19 +117,17 @@ const UserPage = () => {
                   <Text style={styles.lastMessage}>New Friends request sent</Text>
                 </View>
                 <View style={styles.button}>
-                  <TouchableOpacity
-                    style={styles.friendButton}
-                    onPress={() => userIdSave(user._id, user.username)}
-                    disabled={acceptedUsers.includes(user._id) || loadingId === user._id}
-                  >
-                    <Text style={styles.buttonText}>
-                      {loadingId === user._id
-                        ? "Sending..."
-                        : acceptedUsers.includes(user._id)
-                        ? "Sent"
-                        : "Add friend"}
-                    </Text>
-                  </TouchableOpacity>
+                  {/* {!acceptedUsers.includes(user._id) && (   */}
+                    <TouchableOpacity
+                      style={styles.friendButton}
+                      onPress={() => userIdSave(user._id, user.username)}
+                      disabled={loadingId === user._id}
+                    >
+                      <Text style={styles.buttonText}>
+                        {loadingId === user._id ? "Sending..." : "Add friend"}
+                      </Text>
+                    </TouchableOpacity>
+                  {/* )} */}
                 </View>
               </View>
             </View>
