@@ -8,7 +8,7 @@ const SettingPage = ()=>{
         <ScrollView>
             <Text>SettingPage</Text>
         </ScrollView>
-        <FooterPage/>
+        {/* <FooterPage/> */}
         </>
     )
 }

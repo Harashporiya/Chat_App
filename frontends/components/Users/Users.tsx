@@ -137,7 +137,7 @@ const UserPage = () => {
           ))}
         </View>
       </ScrollView>
-      <FooterPage />
+      {/* <FooterPage /> */}
     </>
   );
 };
