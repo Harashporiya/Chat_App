@@ -77,7 +77,12 @@ const UserPage = () => {
         return;
       }
   
-    
+      await axios.post(`${BACKEND_URL}/api/friend/userId`,{
+        loginUserId,
+        username,
+        sentFriendId: friendId1,
+        sentFriendUsername: friendUsername,
+      })
       await axios.post(`${BACKEND_URL}/api/userId`, {
         loginUserId,
         username,
@@ -96,8 +101,6 @@ const UserPage = () => {
       setLoadingId(null);
     }
   };
-  
-
   return (
     <>
       <ScrollView style={styles.scrollView}>
