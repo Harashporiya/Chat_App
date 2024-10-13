@@ -27,11 +27,11 @@ const NotificationsPage = () => {
     const fetchUsersData = async () => {
       const loggedInUserId = await AsyncStorage.getItem("UserId");
       setUserId(loggedInUserId);
-    //   console.log(loggedInUserId);
+      //   console.log(loggedInUserId);
 
       try {
         const res = await axios.get(`${BACKEND_URL}/api/sent`);
-        
+
         const filteredRequests = res.data.userdata.filter((request: User) => request.sentFriendId === loggedInUserId);
         setUserData({ ...res.data, userdata: filteredRequests });
         // console.log("Filtered Requests:", filteredRequests);
@@ -42,27 +42,34 @@ const NotificationsPage = () => {
     fetchUsersData();
   }, []);
 
- 
-    const handleAccept =async (username:string,acceptUserId:string ) => {
-   
-     try {
-      const res = await axios.post(`${BACKEND_URL}/api/accepts`,{
+
+  const handleAccept = async (username: string, acceptUserId: string) => {
+
+    try {
+      const res = await axios.post(`${BACKEND_URL}/api/accepts`, {
         username, acceptUserId
       });
       Alert.alert("success", "Friend request accept")
-      console.log(res.data)
-     } catch (error) {
-      console.log("ERROR",error);
-      Alert.alert("error", "Friend request accept error")
-     }
-      
-    };
-  
+      // console.log(res.data)
+    } catch (error) {
+      console.log("ERROR", error);
+      Alert.alert("error", "Friend request accept, error")
+    }
 
-  const handleDecline = (friendId: string) => {
-   
-    console.log(`Declined friend request from: ${friendId}`);
-   
+  };
+
+
+  const handleDecline = async (friendId: string) => {
+
+    try {
+      const res = await axios.delete(`${BACKEND_URL}/api/delete/${friendId}`);
+      Alert.alert("success", "Friend request decline")
+      // console.log(res.data);
+    } catch (error) {
+      console.log("ERROR", error);
+      Alert.alert("error", "Friend request decline, error")
+    }
+
   };
 
 
@@ -86,14 +93,14 @@ const NotificationsPage = () => {
                   <Text style={styles.username}>{user.username}</Text>
                   <Text style={styles.lastMessage}>New Friend request</Text>
                   <View style={styles.button}>
-                    <TouchableOpacity 
-                      style={styles.acceptButton} 
+                    <TouchableOpacity
+                      style={styles.acceptButton}
                       onPress={() => handleAccept(user._id, user.username)}
                     >
                       <Text style={styles.buttonText}>ACCEPT</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={styles.declineButton} 
+                    <TouchableOpacity
+                      style={styles.declineButton}
                       onPress={() => handleDecline(user._id)}
                     >
                       <Text style={styles.buttonText}>DECLINE</Text>
