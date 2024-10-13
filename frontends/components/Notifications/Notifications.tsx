@@ -4,10 +4,9 @@ import FooterPage from "../footer";
 import axios from "axios";
 import { BACKEND_URL } from "../../API_BACKENDS/Backend_API";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
-import { RouterType } from "../Navigation";
 
 interface User {
+  loginUserId: string;
   sentFriendId: string | null;
   _id: string;
   username: string;
@@ -27,52 +26,46 @@ const NotificationsPage = () => {
     const fetchUsersData = async () => {
       const loggedInUserId = await AsyncStorage.getItem("UserId");
       setUserId(loggedInUserId);
-      //   console.log(loggedInUserId);
 
       try {
         const res = await axios.get(`${BACKEND_URL}/api/sent`);
-
         const filteredRequests = res.data.userdata.filter((request: User) => request.sentFriendId === loggedInUserId);
         setUserData({ ...res.data, userdata: filteredRequests });
-        // console.log("Filtered Requests:", filteredRequests);
       } catch (error) {
         console.log("Failed to fetch users data: ", error);
       }
     };
+
     fetchUsersData();
   }, []);
 
-
   const handleAccept = async (username: string, acceptUserId: string) => {
+    const loginUserId = await AsyncStorage.getItem("UserId");
+    const loginUsername = await AsyncStorage.getItem("Username");
 
     try {
       const res = await axios.post(`${BACKEND_URL}/api/accepts`, {
-        username, acceptUserId
+        username,
+        acceptUserId,
+        loginUsername,
+        loginUserId,
       });
-      Alert.alert("success", "Friend request accept")
-      // console.log(res.data)
+      Alert.alert("Success", "Friend request accepted");
     } catch (error) {
       console.log("ERROR", error);
-      Alert.alert("error", "Friend request accept, error")
+      Alert.alert("Error", "Failed to accept friend request");
     }
-
   };
-
 
   const handleDecline = async (friendId: string) => {
-
     try {
       const res = await axios.delete(`${BACKEND_URL}/api/delete/${friendId}`);
-      Alert.alert("success", "Friend request decline")
-      // console.log(res.data);
+      Alert.alert("Success", "Friend request declined");
     } catch (error) {
       console.log("ERROR", error);
-      Alert.alert("error", "Friend request decline, error")
+      Alert.alert("Error", "Failed to decline friend request");
     }
-
   };
-
-
 
   return (
     <>
@@ -82,12 +75,7 @@ const NotificationsPage = () => {
             userData.userdata.map((user) => (
               <View key={user._id} style={styles.userCard}>
                 <View style={styles.avatar}>
-                  <Image
-                    style={styles.image}
-                    source={{
-                      uri: user.profileImage,
-                    }}
-                  />
+                  <Image style={styles.image} source={{ uri: user.profileImage }} />
                 </View>
                 <View style={styles.userInfo}>
                   <Text style={styles.username}>{user.username}</Text>
@@ -95,7 +83,7 @@ const NotificationsPage = () => {
                   <View style={styles.button}>
                     <TouchableOpacity
                       style={styles.acceptButton}
-                      onPress={() => handleAccept(user._id, user.username)}
+                      onPress={() => handleAccept(user.username, user.loginUserId)}
                     >
                       <Text style={styles.buttonText}>ACCEPT</Text>
                     </TouchableOpacity>
@@ -122,18 +110,18 @@ const NotificationsPage = () => {
 const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   container: {
     flex: 1,
     padding: 16,
   },
   userCard: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
@@ -141,14 +129,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   avatar: {
-    position: 'relative',
     marginRight: 12,
   },
   image: {
     height: 56,
     width: 56,
     borderRadius: 28,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
   },
   userInfo: {
     flex: 1,
@@ -156,17 +143,16 @@ const styles = StyleSheet.create({
   },
   username: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
+    fontWeight: "600",
+    color: "#1a1a1a",
     marginBottom: 2,
   },
   lastMessage: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
   },
   button: {
     flexDirection: "row",
-    marginHorizontal: -10,
     marginLeft: 40,
   },
   acceptButton: {
