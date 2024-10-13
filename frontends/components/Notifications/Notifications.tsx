@@ -28,9 +28,10 @@ const NotificationsPage = () => {
       setUserId(loggedInUserId);
 
       try {
-        const res = await axios.get(`${BACKEND_URL}/api/sent`);
+        const res = await axios.get(`${BACKEND_URL}/api/friend/sent`);
         const filteredRequests = res.data.userdata.filter((request: User) => request.sentFriendId === loggedInUserId);
         setUserData({ ...res.data, userdata: filteredRequests });
+        // console.log(res.data)
       } catch (error) {
         console.log("Failed to fetch users data: ", error);
       }
@@ -50,12 +51,23 @@ const NotificationsPage = () => {
         loginUsername,
         loginUserId,
       });
+     
       Alert.alert("Success", "Friend request accepted");
     } catch (error) {
       console.log("ERROR", error);
       Alert.alert("Error", "Failed to accept friend request");
     }
   };
+
+  const accepts = async(friendId: string)=>{
+    try {
+      const res = await axios.delete(`${BACKEND_URL}/api/friend/delete/${friendId}`);
+  // console.log(res.data)
+    } catch (error) {
+      console.log("ERROR hello", error);
+      // Alert.alert("Error", "Failed to decline friend request");
+    }
+  }
 
   const handleDecline = async (friendId: string) => {
     try {
@@ -83,7 +95,7 @@ const NotificationsPage = () => {
                   <View style={styles.button}>
                     <TouchableOpacity
                       style={styles.acceptButton}
-                      onPress={() => handleAccept(user.username, user.loginUserId)}
+                      onPress={() => (handleAccept(user.username, user.loginUserId),accepts(user._id))}
                     >
                       <Text style={styles.buttonText}>ACCEPT</Text>
                     </TouchableOpacity>
