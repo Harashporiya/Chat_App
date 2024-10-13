@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Alert } from "react-native";
 import FooterPage from "../footer";
 import axios from "axios";
 import { BACKEND_URL } from "../../API_BACKENDS/Backend_API";
@@ -42,17 +42,30 @@ const NotificationsPage = () => {
     fetchUsersData();
   }, []);
 
-  const handleAccept = (friendId: string) => {
+ 
+    const handleAccept =async (username:string,acceptUserId:string ) => {
    
-    console.log(`Accepted friend request from: ${friendId}`);
-    
-  };
+     try {
+      const res = await axios.post(`${BACKEND_URL}/api/accepts`,{
+        username, acceptUserId
+      });
+      Alert.alert("success", "Friend request accept")
+      console.log(res.data)
+     } catch (error) {
+      console.log("ERROR",error);
+      Alert.alert("error", "Friend request accept error")
+     }
+      
+    };
+  
 
   const handleDecline = (friendId: string) => {
    
     console.log(`Declined friend request from: ${friendId}`);
    
   };
+
+
 
   return (
     <>
@@ -75,7 +88,7 @@ const NotificationsPage = () => {
                   <View style={styles.button}>
                     <TouchableOpacity 
                       style={styles.acceptButton} 
-                      onPress={() => handleAccept(user._id)}
+                      onPress={() => handleAccept(user._id, user.username)}
                     >
                       <Text style={styles.buttonText}>ACCEPT</Text>
                     </TouchableOpacity>
