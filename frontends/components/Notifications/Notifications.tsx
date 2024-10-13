@@ -69,6 +69,8 @@ const NotificationsPage = () => {
     }
   }
 
+ 
+
   const handleDecline = async (friendId: string) => {
     try {
       const res = await axios.delete(`${BACKEND_URL}/api/delete/${friendId}`);
@@ -110,7 +112,10 @@ const NotificationsPage = () => {
               </View>
             ))
           ) : (
-            <Text>No friend requests sent.</Text>
+            <View style={styles.imageContainer}>
+            {/* <Text>No friend requests sent.</Text> */}
+            <Image style={styles.imageNotFound} source={{uri:"https://cdni.iconscout.com/illustration/premium/thumb/no-notification-illustration-download-in-svg-png-gif-file-formats--bell-ring-empty-inbox-simple-error-state-pack-user-interface-illustrations-6024629.png?f=webp"}}/>
+            </View>
           )}
         </View>
       </ScrollView>
@@ -185,6 +190,17 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "600",
   },
+  imageNotFound:{
+    height: 200,
+    width: 200,
+   
+  },
+  imageContainer:{
+    flex:1,
+    alignItems:"center",
+    justifyContent:'center',
+    marginTop:300
+  }
 });
 
 export default NotificationsPage;
