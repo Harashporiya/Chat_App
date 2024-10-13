@@ -6,6 +6,7 @@ import { BACKEND_URL } from "../../API_BACKENDS/Backend_API";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface User {
+  createdAt: string;
   loginUserId: string;
   sentFriendId: string | null;
   _id: string;
@@ -92,7 +93,10 @@ const NotificationsPage = () => {
                   <Image style={styles.image} source={{ uri: user.profileImage }} />
                 </View>
                 <View style={styles.userInfo}>
+                  <View style={{flexDirection:"row", justifyContent:"space-between",marginTop:10}}>
                   <Text style={styles.username}>{user.username}</Text>
+                  <Text>{user.createdAt.slice(0,10)}</Text>
+                  </View>
                   <Text style={styles.lastMessage}>New Friend request</Text>
                   <View style={styles.button}>
                     <TouchableOpacity
