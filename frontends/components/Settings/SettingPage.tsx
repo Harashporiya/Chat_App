@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, StyleSheet, ImageBackground, TouchableOpacity } from "react-native";
+import { View, Text, Image, StyleSheet, ImageBackground, TouchableOpacity, Alert } from "react-native";
 import axios from "axios";
 import { BACKEND_URL } from "../../API_BACKENDS/Backend_API";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { RouterType } from "../Navigation";
 
 interface User {
   profileImage: string;
@@ -13,6 +15,7 @@ interface User {
 
 const SettingPage = () => {
   const [profile, setProfile] = useState<User | null>(null);
+  const navigation = useNavigation<NavigationProp<RouterType>>()
 
   useEffect(() => {
     const dataFetchUserById = async () => {
@@ -27,6 +30,14 @@ const SettingPage = () => {
 
     dataFetchUserById();
   }, []);
+
+  const tokenRemove = async()=>{
+    
+    const remove = await AsyncStorage.removeItem("token");
+    Alert.alert("success", "Logout successfull")
+    // console.log(remove)
+    navigation.navigate("Signin")
+  }
 
   return (
     <View style={styles.container}>
@@ -54,7 +65,7 @@ const SettingPage = () => {
       <TouchableOpacity style={styles.btn}>
         <Text style={styles.btnText}>Change Image</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={[styles.btn, styles.logoutBtn]}>
+      <TouchableOpacity style={[styles.btn, styles.logoutBtn]} onPress={()=>tokenRemove()}>
         <Text style={styles.btnText}>Logout</Text>
       </TouchableOpacity>
     </View>
