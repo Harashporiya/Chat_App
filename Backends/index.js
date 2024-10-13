@@ -4,7 +4,7 @@ const app = express()
 const PORT = 6006;
 const userRouter = require("./routes/user")
 const acceptUserRoute = require("./routes/acceptUser")
-const loginUserRouter = require("./routes/LoginUserSend")
+const sendFriendRequest = require("./routes/sendFriendRequest")
 const requestUser = require("./routes/requestAccepts")
 
 
@@ -18,7 +18,7 @@ app.get("/", (req,res)=>{
 app.use(express.json())
 app.use("/api", userRouter);
 app.use("/api", acceptUserRoute);
-app.use("/api/login", loginUserRouter)
+app.use("/api/friend", sendFriendRequest)
 app.use("/api", requestUser)
 
 
