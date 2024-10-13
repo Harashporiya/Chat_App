@@ -30,4 +30,16 @@ router.get("/sent", async (req, res) => {
     }
 });
 
+router.delete("/delete/:id", async(req,res)=>{
+    const params = req.params;
+    const id = params.id;
+    console.log(id)
+    try {
+        const deleteId = await AcceptUser.findByIdAndDelete(id);
+        return res.status(200).json({message:"Friend request delete", deleteId})
+    } catch (error) {
+        return res.status(500).json({ message: "Internal server error", details: error.message });
+    }
+})
+
 module.exports = router;
