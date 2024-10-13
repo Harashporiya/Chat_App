@@ -98,7 +98,7 @@ const ChatApp = () => {
             ))}
         </View>
       </ScrollView>
-      <FooterPage />
+      {/* <FooterPage /> */}
     </>
   );
 };

@@ -130,7 +130,7 @@ const NotificationsPage = () => {
           )}
         </View>
       </ScrollView>
-      <FooterPage />
+      {/* <FooterPage /> */}
     </>
   );
 };
