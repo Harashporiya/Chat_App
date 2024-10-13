@@ -68,8 +68,8 @@ const UserPage = () => {
       const existingRequests = response.data.userdata || [];
   
       const requestExists = existingRequests.some(
-        (request: { loginUserId: string; sentFriendId: string }) =>(request.loginUserId === loginUserId && request.sentFriendId === friendId1) ||
-          (request.sentFriendId === loginUserId && request.loginUserId === friendId1)
+        (request: { loginUserId: string; sentFriendId: string }) =>(request.loginUserId === loginUserId && request.sentFriendId === friendId1) 
+         || (request.sentFriendId === loginUserId && request.loginUserId === friendId1)
       );
   
       if (requestExists) {
