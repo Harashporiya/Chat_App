@@ -33,6 +33,10 @@ const NotificationsPage = () => {
         const filteredRequests = res.data.userdata.filter((request: User) => request.sentFriendId === loggedInUserId);
         setUserData({ ...res.data, userdata: filteredRequests });
         // console.log(res.data)
+        
+       const count = filteredRequests.length;
+       await AsyncStorage.setItem("FriendsCount",count.toString())
+      //  console.log(count)
       } catch (error) {
         console.log("Failed to fetch users data: ", error);
       }
@@ -82,6 +86,8 @@ const NotificationsPage = () => {
     }
   };
 
+  
+
   return (
     <>
       <ScrollView style={styles.scrollView}>
@@ -89,6 +95,7 @@ const NotificationsPage = () => {
           {userData && userData.userdata.length > 0 ? (
             userData.userdata.map((user) => (
               <View key={user._id} style={styles.userCard}>
+                {/* <Text>{userData.userdata.length}</Text> */}
                 <View style={styles.avatar}>
                   <Image style={styles.image} source={{ uri: user.profileImage }} />
                 </View>
