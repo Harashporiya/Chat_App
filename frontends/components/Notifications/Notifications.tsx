@@ -34,8 +34,8 @@ const NotificationsPage = () => {
         setUserData({ ...res.data, userdata: filteredRequests });
         // console.log(res.data)
         
-       const count = filteredRequests.length;
-       await AsyncStorage.setItem("FriendsCount",count.toString())
+      //  const count = filteredRequests.length;
+      //  await AsyncStorage.setItem("FriendsCount",count.toString())
       //  console.log(count)
       } catch (error) {
         console.log("Failed to fetch users data: ", error);
