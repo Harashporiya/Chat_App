@@ -29,7 +29,7 @@ router.get("/sent", async(req,res)=>{
 router.delete("/delete/:id", async(req,res)=>{
     const params = req.params;
     const id = params.id;
-    console.log(id)
+    // console.log(id)
     try {
         const deleteId = await sendFriend.findByIdAndDelete(id);
         return res.status(200).json({message:"Friend request delete", deleteId})
