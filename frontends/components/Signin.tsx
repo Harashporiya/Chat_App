@@ -21,6 +21,8 @@ const Signin = () => {
             })
             AsyncStorage.setItem("UserId", res.data.user._id)
             AsyncStorage.setItem("Username", res.data.user.username)
+            AsyncStorage.setItem("token", res.data.token)
+            // console.log(res.data.token)
             Alert.alert("success","Signin Successfull");
             // console.log(res.data)
             setEmail('')

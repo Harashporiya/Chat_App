@@ -28,6 +28,8 @@ const Signup = () => {
             
             AsyncStorage.setItem("UserId", res.data.createUser._id)
             AsyncStorage.setItem("Username", res.data.createUser.username)
+            AsyncStorage.setItem("token", res.data.token)
+            // console.log(res.data.token)
             setUserName('')
             setEmail('')
             setPassowrd('')
