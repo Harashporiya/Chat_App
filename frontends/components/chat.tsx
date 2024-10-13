@@ -8,6 +8,9 @@ import { NavigationProp, useNavigation, useRoute } from "@react-navigation/nativ
 import { RouterType } from "./Navigation";
 
 interface User {
+  loginUsername: string;
+  acceptUserId: string | null;
+  loginUserId: string | null;
   _id: string;
   username: string;
   profileImage: string;
@@ -15,23 +18,24 @@ interface User {
 
 interface UserData {
   message: string;
-  allUser: User[];
+  allAcceptsUser: User[];
 }
 
 const ChatApp = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [idUser, setUserId] = useState<string | null>(null);
+  const [idUserlogin, setUserIdLogin] = useState<string | null>(null);
    
   const navigation = useNavigation<NavigationProp<RouterType>>();
   const route = useRoute();
 
   useEffect(() => {
     const fetchUsersData = async () => {
-      const userId = await AsyncStorage.getItem("UserId");
-      setUserId(userId);
+      const userIdLogin = await AsyncStorage.getItem("UserId");
+    const loginUsername = await AsyncStorage.getItem("Username");
+    setUserIdLogin(userIdLogin);
 
       try {
-        const res = await axios.get(`${BACKEND_URL}/api/all/users`);
+        const res = await axios.get(`${BACKEND_URL}/api/all/accepts`);
         setUserData(res.data);
       } catch (error) {
         console.log("ERROR", error);
@@ -40,20 +44,34 @@ const ChatApp = () => {
     fetchUsersData();
   }, []);
 
+
+      
   const showDataByUser = (user: User) => {
+    const filterUsers = (users: User[], userId: string | null) => {
+      return users.filter(user => 
+        (user.loginUserId === userId && user.acceptUserId !== userId) ||
+        (user.acceptUserId === userId && user.loginUserId !== userId)
+      );
+    };
     navigation.navigate("ChatUser", { 
         id: user._id, 
-        username: user.username,
-        profileImage:user.profileImage
+        username: user.loginUserId === idUserlogin ? user.username : user.loginUsername,
+        profileImage:user.profileImage,
     });
   };
+
+  async function h(){
+    const userIdLogin = await AsyncStorage.getItem("UserId");
+    console.log(userIdLogin)
+  }h()
 
   return (
     <>
       <ScrollView style={styles.scrollView}>
         <View style={styles.container}>
           <Text style={styles.header}>Messages</Text>
-          {userData?.allUser.filter(user => user._id !== idUser).map(user => (
+          {userData?.allAcceptsUser.filter(user=>(user.loginUserId === idUserlogin && user.acceptUserId !== idUserlogin)
+          || (user.acceptUserId === idUserlogin && user.loginUserId !== idUserlogin)).map(user => (
               <TouchableOpacity key={user._id} onPress={() => showDataByUser(user)}>
                 <View style={styles.userCard}>
                   <View style={styles.avatar}>
@@ -66,7 +84,7 @@ const ChatApp = () => {
                     <View style={styles.onlineIndicator} />
                   </View>
                   <View style={styles.userInfo}>
-                    <Text style={styles.username}>{user.username}</Text>
+                    <Text style={styles.username}>{user.loginUserId === idUserlogin ? user.username : user.loginUsername}</Text>
                     <Text style={styles.lastMessage}>Hey, how are you?</Text>
                   </View>
                   <View style={styles.timeContainer}>
