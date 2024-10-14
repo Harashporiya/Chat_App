@@ -1,7 +1,7 @@
 const mongoose = require("mongoose")
 const express = require("express")
 const app = express()
-const PORT = 6006;
+const PORT = 6060;
 const userRouter = require("./routes/user")
 const acceptUserRoute = require("./routes/acceptUser")
 const sendFriendRequest = require("./routes/sendFriendRequest")
@@ -19,7 +19,7 @@ mongoose.connect("mongodb://localhost:27017/chat_App",{})
 const server = createServer(app);
 const io = new Server(server,{
     cors:{
-        origin:"http://localhost:6006",
+        origin:"http://localhost:6060",
         methods:["GET", "POST"],
         credentials:true,
     }
