@@ -31,21 +31,19 @@ const ChatApp = () => {
   useEffect(() => {
     const fetchUsersData = async () => {
       const userIdLogin = await AsyncStorage.getItem("UserId");
-    const loginUsername = await AsyncStorage.getItem("Username");
-    setUserIdLogin(userIdLogin);
+      const loginUsername = await AsyncStorage.getItem("Username");
+      setUserIdLogin(userIdLogin);
 
       try {
         const res = await axios.get(`${BACKEND_URL}/api/all/accepts`);
         setUserData(res.data);
       } catch (error) {
-        console.log("ERROR", error);
+        console.log("ERROR hello", error);
       }
     };
     fetchUsersData();
   }, []);
 
-
-      
   const showDataByUser = (user: User) => {
     const filterUsers = (users: User[], userId: string | null) => {
       return users.filter(user => 
@@ -60,10 +58,26 @@ const ChatApp = () => {
     });
   };
 
-  async function h(){
-    const userIdLogin = await AsyncStorage.getItem("UserId");
-    console.log(userIdLogin)
-  }h()
+   const   handel = (sentUserId:string)=>{
+    AsyncStorage.setItem("sentId",sentUserId);
+    // console.log(userIdLogin)
+  }
+
+  const saveMessageAndDataId=async(sentUsername:string, sentUserId:string)=>{
+    const loginUserId = await AsyncStorage.getItem("UserId")
+    const loginUsername = await AsyncStorage.getItem("Username")
+   
+    try {
+      const res = await axios.post(`${BACKEND_URL}/api/message`,{
+       
+        loginUserId,loginUsername,sentUserId,sentUsername
+        
+      })
+        console.log(res.data)
+    } catch (error) {
+      console.log("ERROR hi",error)
+    }
+  }
 
   return (
     <>
@@ -72,7 +86,7 @@ const ChatApp = () => {
           <Text style={styles.header}>Messages</Text>
           {userData?.allAcceptsUser.filter(user=>(user.loginUserId === idUserlogin && user.acceptUserId !== idUserlogin)
           || (user.acceptUserId === idUserlogin && user.loginUserId !== idUserlogin)).map(user => (
-              <TouchableOpacity key={user._id} onPress={() => showDataByUser(user)}>
+              <TouchableOpacity key={user._id} onPress={() =>{ showDataByUser(user); saveMessageAndDataId(user.username, user._id);handel(user._id)}}>
                 <View style={styles.userCard}>
                   <View style={styles.avatar}>
                     <Image
