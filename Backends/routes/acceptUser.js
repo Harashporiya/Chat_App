@@ -9,7 +9,7 @@ router.post("/userId", async (req, res) => {
     
     try {
         const userNew = await AcceptUser.create({ loginUserId, username, sentFriendId, sentFriendUsername });
-        console.log(userNew);
+        // console.log(userNew);
         return res.status(200).json({ message: "User id stored successfully", userNew });
     } catch (error) {
         console.error("Error storing user id:", error);
