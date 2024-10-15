@@ -9,8 +9,8 @@ import { RouterType } from "./Navigation";
 
 interface User {
   loginUsername: string;
-  acceptUserId: string | null;
-  loginUserId: string | null;
+  acceptUserId: string;
+  loginUserId: string ;
   _id: string;
   username: string;
   profileImage: string;
@@ -24,6 +24,7 @@ interface UserData {
 const ChatApp = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [idUserlogin, setUserIdLogin] = useState<string | null>(null);
+  const [roomId,setRoomId] = useState<string| null>(null);
    
   const navigation = useNavigation<NavigationProp<RouterType>>();
   const route = useRoute();
@@ -44,17 +45,35 @@ const ChatApp = () => {
     fetchUsersData();
   }, []);
 
-  const showDataByUser = (user: User) => {
+  const showDataByUser = async(user: User) => {
     const filterUsers = (users: User[], userId: string | null) => {
       return users.filter(user => 
         (user.loginUserId === userId && user.acceptUserId !== userId) ||
         (user.acceptUserId === userId && user.loginUserId !== userId)
       );
     };
+
+    const sentUserId = user.loginUserId === idUserlogin ? user.acceptUserId : user.loginUserId;
+    const loginUserId = await AsyncStorage.getItem("UserId")
+   
+    try {
+      const res = await axios.post(`${BACKEND_URL}/api/message`,{
+       
+        
+        loginUserId,
+        sentUserId,
+      })
+      // console.log(res.data)
+        setRoomId(res.data.room._id);
+    } catch (error) {
+      console.log("ERROR hi",error)
+    }
+    // console.log("RoomId hi:", roomId)
     navigation.navigate("ChatUser", { 
         id: user._id, 
         username: user.loginUserId === idUserlogin ? user.username : user.loginUsername,
         profileImage:user.profileImage,
+        sentIdUser:roomId as string,
     });
   };
 
@@ -62,22 +81,7 @@ const ChatApp = () => {
     AsyncStorage.setItem("sentId",sentUserId);
     // console.log(userIdLogin)
   }
-
-  const saveMessageAndDataId=async(sentUsername:string, sentUserId:string)=>{
-    const loginUserId = await AsyncStorage.getItem("UserId")
-    const loginUsername = await AsyncStorage.getItem("Username")
-   
-    try {
-      const res = await axios.post(`${BACKEND_URL}/api/message`,{
-       
-        loginUserId,loginUsername,sentUserId,sentUsername
-        
-      })
-        console.log(res.data)
-    } catch (error) {
-      console.log("ERROR hi",error)
-    }
-  }
+  
 
   return (
     <>
@@ -86,10 +90,10 @@ const ChatApp = () => {
           <Text style={styles.header}>Messages</Text>
           {userData?.allAcceptsUser.filter(user=>(user.loginUserId === idUserlogin && user.acceptUserId !== idUserlogin)
           || (user.acceptUserId === idUserlogin && user.loginUserId !== idUserlogin)).map(user => (
-              <TouchableOpacity key={user._id} onPress={() =>{ showDataByUser(user); saveMessageAndDataId(user.username, user._id);handel(user._id)}}>
+              <TouchableOpacity key={user._id} onPress={() =>{ showDataByUser(user);handel(user._id)}}>
                 <View style={styles.userCard}>
                   <View style={styles.avatar}>
-                    <Image
+                    <Image 
                       style={styles.image}
                       source={{
                         uri: user.profileImage 
