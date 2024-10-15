@@ -1,61 +1,49 @@
-import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { View, Text, Image, ScrollView, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useLayoutEffect, useMemo, useState, useCallback } from 'react';
+import { View, Text, Image, FlatList, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRoute, RouteProp } from '@react-navigation/native';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { io } from "socket.io-client";
-import { BACKEND_URL } from '../../API_BACKENDS/Backend_API';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { io, Socket } from "socket.io-client";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
+import { BACKEND_URL } from '../../API_BACKENDS/Backend_API';
 
 type ChatPageUserRouteParams = {
   ChatUser: {
     username: string;
     profileImage: string;
-    sentUserId: string;
+    sentIdUser: string;
   };
 };
 
-const ChatPageUser = ({ navigation }: { navigation: any }) => {
+type Message = {
+  senderId: string;
+  message: string;
+};
+
+const ChatPageUser: React.FC<{ navigation: any }> = ({ navigation }) => {
   const route = useRoute<RouteProp<ChatPageUserRouteParams, 'ChatUser'>>();
-  const { username, profileImage } = route.params;
+  const { username, profileImage, sentIdUser } = route.params;
   const [loginUserId, setLoginUserId] = useState<string | null>(null);
-
-  const [messages, setMessages] = useState<Array<{ senderId: string; message: string }>>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [message, setMessage] = useState('');
-  const [sentUserId, setSentUserid] = useState<string | null>(null)
+  // console.log("RoomId: hi",sentIdUser)
+  const socket: Socket = useMemo(() => io(BACKEND_URL), []);
 
-  // useEffect(()=>{
-  //  const dataFetch=async()=>{
-  //   try {
-  //     const res = await axios.get(`${BACKEND_URL}/api/message`);
-  //     console.log(res.data);
-  //   } catch (error) {
-  //     console.log("ERROR", error);
-  //   }
-  //  }
-  //  dataFetch()
-  // },[]);
-
-  const socket = useMemo(() => io(`${BACKEND_URL}`), []);
+  const getLoginUserId = useCallback(async () => {
+    const storedLoginUserId = await AsyncStorage.getItem('UserId');
+    setLoginUserId(storedLoginUserId);
+    if (sentIdUser) {
+      socket.emit("join_room", { sentIdUser});
+    }
+  }, [sentIdUser, socket]);
 
   useEffect(() => {
-
-    const getLoginUserId = async () => {
-      const storedLoginUserId = await AsyncStorage.getItem('UserId');
-      const sentId = await AsyncStorage.getItem("sentId");
-      setSentUserid(sentId)
-      setLoginUserId(storedLoginUserId);
-      if (storedLoginUserId && sentUserId) {
-        socket.emit("join_room", { loginUserId: storedLoginUserId, sentUserId });
-      }
-    };
     getLoginUserId();
 
     socket.on("connect", () => {
-      console.log("User connected with id: ", socket.id);
+      console.log("User connected with id:", socket.id);
     });
 
-    socket.on("receive_message", (data: { senderId: string; message: string }) => {
+    socket.on("receive_message", (data: Message) => {
       setMessages((prevMessages) => [...prevMessages, data]);
     });
 
@@ -64,46 +52,42 @@ const ChatPageUser = ({ navigation }: { navigation: any }) => {
       socket.off("receive_message");
       socket.disconnect();
     };
-  }, [socket, sentUserId]);
+  }, [socket, getLoginUserId]);
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     if (message.trim() && loginUserId) {
-      // console.log(sentUserId);
-      console.log(sentUserId);
-      socket.emit("send_message", { loginUserId, sentUserId, message });
-      setMessages((prevMessages) => [...prevMessages, { senderId: loginUserId, message }]);
+      const newMessage = { senderId: loginUserId, message: message.trim() };
+      socket.emit("send_message", { sentIdUser, ...newMessage });
+      // setMessages((prevMessages) => [...prevMessages, newMessage]);
       setMessage('');
-    } else {
-      console.log("Conditions not met");
     }
-  };
+  }, [message, loginUserId, sentIdUser, socket]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Image
-            source={{ uri: profileImage }}
-            style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }}
-          />
-          <Text style={{ fontSize: 18, fontWeight: 'bold', color: 'black' }}>
-            {username}
-          </Text>
+        <View style={styles.headerTitle}>
+          <Image source={{ uri: profileImage }} style={styles.profileImage} />
+          <Text style={styles.username}>{username}</Text>
         </View>
       ),
     });
   }, [navigation, username, profileImage]);
 
+  const renderMessage = ({ item }: { item: Message }) => (
+    <View >
+      {/* style={item.senderId === loginUserId ? styles.sentMessage : styles.receivedMessage} */}
+      <Text>{item.message}</Text>
+    </View>
+  );
+
   return (
-    <>
-      <ScrollView>
-        {messages.map((msg, index) => (
-          <View key={index} >
-            {/* style={msg.senderId === loginUserId ? styles.sentMessage : styles.receivedMessage} */}
-            <Text>{msg.message}</Text>
-          </View>
-        ))}
-      </ScrollView>
+    <View style={styles.container}>
+      <FlatList
+        data={messages}
+        renderItem={renderMessage}
+        keyExtractor={(_, index) => index.toString()}
+      />
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
@@ -112,17 +96,33 @@ const ChatPageUser = ({ navigation }: { navigation: any }) => {
           onChangeText={setMessage}
           onSubmitEditing={handleSubmit}
         />
-        <TouchableOpacity onPress={() => {
-          handleSubmit();
-        }}>
+        <TouchableOpacity onPress={handleSubmit}>
           <MaterialCommunityIcons name="send" size={28} color="dodgerblue" />
         </TouchableOpacity>
       </View>
-    </>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  headerTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  username: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'black',
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
