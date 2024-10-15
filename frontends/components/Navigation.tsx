@@ -8,6 +8,7 @@ export type RouterType={
     Settings:undefined;
     ChatUser:{id:string,
         username:string,
-        profileImage:string
+        profileImage:string,
+        sentIdUser:string
     };
 }
