@@ -24,7 +24,7 @@ interface UserData {
 const ChatApp = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [idUserlogin, setUserIdLogin] = useState<string | null>(null);
-  const [roomId,setRoomId] = useState<string| null>(null);
+  // const [roomId,setRoomId] = useState<string| null>(null);
    
   const navigation = useNavigation<NavigationProp<RouterType>>();
   const route = useRoute();
@@ -57,32 +57,46 @@ const ChatApp = () => {
     const loginUserId = await AsyncStorage.getItem("UserId")
    
     try {
-      const res = await axios.post(`${BACKEND_URL}/api/message`,{
+      const res = await axios.post(`${BACKEND_URL}/api/joinroom`,{
        
         
         loginUserId,
         sentUserId,
       })
       // console.log(res.data)
-        setRoomId(res.data.room._id);
+        const roomId = res.data.room._id;
+        navigation.navigate("ChatUser", { 
+          id: user._id, 
+          username: user.loginUserId === idUserlogin ? user.username : user.loginUsername,
+          profileImage:user.profileImage,
+          sentIdUser:user.loginUserId === idUserlogin ? user.acceptUserId : user.loginUserId,
+          joinRoomId:roomId,
+      });
     } catch (error) {
       console.log("ERROR hi",error)
     }
     // console.log("RoomId hi:", roomId)
-    navigation.navigate("ChatUser", { 
-        id: user._id, 
-        username: user.loginUserId === idUserlogin ? user.username : user.loginUsername,
-        profileImage:user.profileImage,
-        sentIdUser:roomId as string,
-    });
+   
   };
 
-   const   handel = (sentUserId:string)=>{
+   const handel = (sentUserId:string)=>{
     AsyncStorage.setItem("sentId",sentUserId);
     // console.log(userIdLogin)
   }
   
+  // useEffect(() => {
+  //   const fetchMessages = async () => {
+  //     try {
+  //       const response = await axios.get(`${BACKEND_URL}/api/messages/${joinRoomId}`);
+       
+  //     } catch (error) {
+  //       console.error("Error fetching messages:", error);
+       
+  //     }
+  //   };
 
+  //   fetchMessages();
+  // }, []);
   return (
     <>
       <ScrollView style={styles.scrollView}>

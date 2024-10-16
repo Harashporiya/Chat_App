@@ -9,6 +9,7 @@ export type RouterType={
     ChatUser:{id:string,
         username:string,
         profileImage:string,
-        sentIdUser:string
+        sentIdUser:string,
+        joinRoomId:string,
     };
 }

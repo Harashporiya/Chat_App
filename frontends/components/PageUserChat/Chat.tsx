@@ -1,40 +1,46 @@
 import React, { useEffect, useLayoutEffect, useMemo, useState, useCallback } from 'react';
-import { View, Text, Image, FlatList, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Image, FlatList, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { io, Socket } from "socket.io-client";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BACKEND_URL } from '../../API_BACKENDS/Backend_API';
+import axios from 'axios';
 
 type ChatPageUserRouteParams = {
   ChatUser: {
     username: string;
     profileImage: string;
     sentIdUser: string;
+    joinRoomId: string;
   };
 };
 
 type Message = {
+  _id: string;
   senderId: string;
   message: string;
+  roomId: string;
+  createdAt: string;
 };
 
 const ChatPageUser: React.FC<{ navigation: any }> = ({ navigation }) => {
   const route = useRoute<RouteProp<ChatPageUserRouteParams, 'ChatUser'>>();
-  const { username, profileImage, sentIdUser } = route.params;
+  const { username, profileImage, joinRoomId, sentIdUser } = route.params;
   const [loginUserId, setLoginUserId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [message, setMessage] = useState('');
-  // console.log("RoomId: hi",sentIdUser)
+  const [isLoading, setIsLoading] = useState(true);
+
   const socket: Socket = useMemo(() => io(BACKEND_URL), []);
 
   const getLoginUserId = useCallback(async () => {
     const storedLoginUserId = await AsyncStorage.getItem('UserId');
     setLoginUserId(storedLoginUserId);
-    if (sentIdUser) {
-      socket.emit("join_room", { sentIdUser});
+    if (joinRoomId) {
+      socket.emit("join_room", { joinRoomId });
     }
-  }, [sentIdUser, socket]);
+  }, [joinRoomId, socket]);
 
   useEffect(() => {
     getLoginUserId();
@@ -44,7 +50,8 @@ const ChatPageUser: React.FC<{ navigation: any }> = ({ navigation }) => {
     });
 
     socket.on("receive_message", (data: Message) => {
-      setMessages((prevMessages) => [...prevMessages, data]);
+      console.log("Received message:", data);
+      setMessages((prevMessages) => [data, ...prevMessages]);
     });
 
     return () => {
@@ -54,14 +61,38 @@ const ChatPageUser: React.FC<{ navigation: any }> = ({ navigation }) => {
     };
   }, [socket, getLoginUserId]);
 
-  const handleSubmit = useCallback(() => {
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const response = await axios.get(`${BACKEND_URL}/api/messages/${joinRoomId}`);
+        setMessages(response.data.reverse());  
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+        Alert.alert("Error", "Failed to load messages. Please try again.");
+        setIsLoading(false);
+      }
+    };
+
+    fetchMessages();
+  }, [joinRoomId]);
+
+  const handleSubmit = useCallback(async () => {
     if (message.trim() && loginUserId) {
-      const newMessage = { senderId: loginUserId, message: message.trim() };
-      socket.emit("send_message", { sentIdUser, ...newMessage });
-      // setMessages((prevMessages) => [...prevMessages, newMessage]);
-      setMessage('');
+      const newMessage = { senderId: loginUserId, message: message.trim(), roomId: joinRoomId };
+      try {
+        const response = await axios.post(`${BACKEND_URL}/api/messages`, newMessage);
+        // console.log("Message sent successfully:", response.data);
+        
+        socket.emit("send_message",response.data);
+        
+        setMessages((prevMessages) => [response.data, ...prevMessages]);
+        setMessage('');
+      } catch (error) {
+          Alert.alert("Error", "Failed to send message. Please try again.");
+      }
     }
-  }, [message, loginUserId, sentIdUser, socket]);
+  }, [message, loginUserId, joinRoomId, socket]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -75,18 +106,28 @@ const ChatPageUser: React.FC<{ navigation: any }> = ({ navigation }) => {
   }, [navigation, username, profileImage]);
 
   const renderMessage = ({ item }: { item: Message }) => (
-    <View >
-      {/* style={item.senderId === loginUserId ? styles.sentMessage : styles.receivedMessage} */}
-      <Text>{item.message}</Text>
+    <View style={item.senderId === loginUserId ? styles.sentMessage : styles.receivedMessage}>
+      <Text key={item._id}>{item.message}</Text>
+      <Text>{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
     </View>
   );
+  
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>Loading messages...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <FlatList
         data={messages}
         renderItem={renderMessage}
-        keyExtractor={(_, index) => index.toString()}
+        keyExtractor={(item) => item._id}
+        inverted
       />
       <View style={styles.inputContainer}>
         <TextInput
@@ -141,22 +182,29 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 20,
   },
-  // sentMessage: {
-  //   alignSelf: 'flex-end',
-  //   backgroundColor: '#DCF8C6',
-  //   padding: 10,
-  //   margin: 5,
-  //   borderRadius: 10,
-  //   maxWidth: '70%',
-  // },
-  // receivedMessage: {
-  //   alignSelf: 'flex-start',
-  //   backgroundColor: '#FFFFFF',
-  //   padding: 10,
-  //   margin: 5,
-  //   borderRadius: 10,
-  //   maxWidth: '70%',
-  // },
+  sentMessage: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#DCF8C6',
+    padding: 10,
+    margin: 5,
+    borderRadius: 10,
+    maxWidth: '70%',
+    fontSize:20
+  },
+  receivedMessage: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    padding: 10,
+    margin: 5,
+    borderRadius: 10,
+    maxWidth: '70%',
+    fontSize:20
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
 
 export default ChatPageUser;
