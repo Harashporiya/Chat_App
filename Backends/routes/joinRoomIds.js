@@ -2,7 +2,7 @@ const express = require("express");
 const join_room = require("../model/joinRoomIds");
 const router = express.Router();
 
-router.post("/message", async (req, res) => {
+router.post("/joinroom", async (req, res) => {
     const { loginUserId, sentUserId } = req.body;
     // console.log(sentUserId);
     try {

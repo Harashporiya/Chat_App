@@ -8,7 +8,9 @@ const userRouter = require("./routes/user");
 const acceptUserRoute = require("./routes/acceptUser");
 const sendFriendRequest = require("./routes/sendFriendRequest");
 const requestUser = require("./routes/requestAccepts");
-const messageRouter = require("./routes/joinRoomIds");
+const joinRoomRouter = require("./routes/joinRoomIds");
+const messageRouter = require("./routes/message")
+
 
 const app = express();
 const PORT = process.env.PORT || 6060;
@@ -31,7 +33,8 @@ app.use("/api", userRouter);
 app.use("/api", acceptUserRoute);
 app.use("/api/friend", sendFriendRequest);
 app.use("/api", requestUser);
-app.use("/api", messageRouter);
+app.use("/api", joinRoomRouter);
+app.use("/api", messageRouter)
 
 // Create HTTP server
 const server = createServer(app);
@@ -49,14 +52,15 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-  socket.on("join_room", ({ sentIdUser}) => {
-    const roomName = sentIdUser;
+  socket.on("join_room", ({ joinRoomId}) => {
+    const roomName = joinRoomId;
     socket.join(roomName);
     console.log(`User ${socket.id} joined room ${roomName}`);
   });
 
-  socket.on("send_message", ({ sentIdUser,message }) => {
-    const roomName = sentIdUser;
+  socket.on("send_message", ({ joinRoomId,message }) => {
+    const roomName = joinRoomId;
+    console.log(roomName)
     console.log(`Sending message to room ${roomName}:`, message);
     io.to(roomName).emit("receive_message", {  message });
   });
