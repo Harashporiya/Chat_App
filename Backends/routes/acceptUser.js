@@ -20,9 +20,9 @@ router.post("/userId", async (req, res) => {
 router.get("/sent", async (req, res) => {
     try {
         const userdata = await AcceptUser.find({});
-        if (userdata.length === 0) {
-            return res.status(404).json({ message: "No user data found" });
-        }
+        // if (userdata.length === 0) {
+        //     return res.status(404).json({ message: "No user data found" });
+        // }
         return res.status(200).json({ message: "All request fetch data", userdata });
     } catch (error) {
         console.error("Error fetching user data:", error);
