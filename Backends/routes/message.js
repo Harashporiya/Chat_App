@@ -26,5 +26,13 @@ router.get('/messages/:roomId', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+router.get('/messages', async (req, res) => {
+  try {
+    const messages = await Message.find();
+    res.json(messages);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 module.exports = router;
