@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Alert, RefreshControl } from "react-native";
 import FooterPage from "../footer";
 import axios from "axios";
 import { BACKEND_URL } from "../../API_BACKENDS/Backend_API";
@@ -22,27 +22,28 @@ interface UserData {
 const NotificationsPage = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchUsersData = async () => {
+    const loggedInUserId = await AsyncStorage.getItem("UserId");
+    setUserId(loggedInUserId);
+
+    try {
+      const res = await axios.get(`${BACKEND_URL}/api/friend/sent`);
+      const filteredRequests = res.data.userdata.filter((request: User) => request.sentFriendId === loggedInUserId);
+      setUserData({ ...res.data, userdata: filteredRequests });
+    } catch (error) {
+      console.log("Failed to fetch users data: ", error);
+    }
+  };
 
   useEffect(() => {
-    const fetchUsersData = async () => {
-      const loggedInUserId = await AsyncStorage.getItem("UserId");
-      setUserId(loggedInUserId);
-
-      try {
-        const res = await axios.get(`${BACKEND_URL}/api/friend/sent`);
-        const filteredRequests = res.data.userdata.filter((request: User) => request.sentFriendId === loggedInUserId);
-        setUserData({ ...res.data, userdata: filteredRequests });
-        // console.log(res.data)
-        
-      //  const count = filteredRequests.length;
-      //  await AsyncStorage.setItem("FriendsCount",count.toString())
-      //  console.log(count)
-      } catch (error) {
-        console.log("Failed to fetch users data: ", error);
-      }
-    };
-
     fetchUsersData();
+  }, []);
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    fetchUsersData().finally(() => setRefreshing(false));
   }, []);
 
   const handleAccept = async (username: string, acceptUserId: string) => {
@@ -64,45 +65,48 @@ const NotificationsPage = () => {
     }
   };
 
-  const accepts = async(friendId: string)=>{
+  const accepts = async(friendId: string) => {
     try {
       const res = await axios.delete(`${BACKEND_URL}/api/friend/delete/${friendId}`);
-  // console.log(res.data)
+      await fetchUsersData(); 
     } catch (error) {
       console.log("ERROR hello", error);
-      // Alert.alert("Error", "Failed to decline friend request");
     }
-  }
-
- 
+  };
 
   const handleDecline = async (friendId: string) => {
     try {
       const res = await axios.delete(`${BACKEND_URL}/api/delete/${friendId}`);
       Alert.alert("Success", "Friend request declined");
+      await fetchUsersData(); 
     } catch (error) {
       console.log("ERROR", error);
       Alert.alert("Error", "Failed to decline friend request");
     }
   };
 
-  
-
   return (
     <>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView 
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+          />
+        }
+      >
         <View style={styles.container}>
           {userData && userData.userdata.length > 0 ? (
             userData.userdata.map((user) => (
               <View key={user._id} style={styles.userCard}>
-                {/* <Text>{userData.userdata.length}</Text> */}
                 <View style={styles.avatar}>
                   <Image style={styles.image} source={{ uri: user.profileImage }} />
                 </View>
                 <View style={styles.userInfo}>
                   <View style={{flexDirection:"row", justifyContent:"space-between",marginTop:10}}>
-                  <Text style={styles.username}>{user.username}</Text>
-                  <Text>{user.createdAt.slice(0,10)}</Text>
+                    <Text style={styles.username}>{user.username}</Text>
+                    <Text>{user.createdAt.slice(0,10)}</Text>
                   </View>
                   <Text style={styles.lastMessage}>New Friend request</Text>
                   <View style={styles.button}>
@@ -124,13 +128,11 @@ const NotificationsPage = () => {
             ))
           ) : (
             <View style={styles.imageContainer}>
-            {/* <Text>No friend requests sent.</Text> */}
-            <Image style={styles.imageNotFound} source={{uri:"https://cdni.iconscout.com/illustration/premium/thumb/no-notification-illustration-download-in-svg-png-gif-file-formats--bell-ring-empty-inbox-simple-error-state-pack-user-interface-illustrations-6024629.png?f=webp"}}/>
+              <Image style={styles.imageNotFound} source={{uri:"https://cdni.iconscout.com/illustration/premium/thumb/no-notification-illustration-download-in-svg-png-gif-file-formats--bell-ring-empty-inbox-simple-error-state-pack-user-interface-illustrations-6024629.png?f=webp"}}/>
             </View>
           )}
         </View>
       </ScrollView>
-      {/* <FooterPage /> */}
     </>
   );
 };
