@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, RefreshControl } from "react-native";
 import FooterPage from "./footer";
 import axios from "axios";
 import { BACKEND_URL } from "../API_BACKENDS/Backend_API";
@@ -24,6 +24,7 @@ interface UserData {
 const ChatApp = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [idUserlogin, setUserIdLogin] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   // const [roomId,setRoomId] = useState<string| null>(null);
    
   const navigation = useNavigation<NavigationProp<RouterType>>();
@@ -38,11 +39,17 @@ const ChatApp = () => {
       try {
         const res = await axios.get(`${BACKEND_URL}/api/all/accepts`);
         setUserData(res.data);
+       
       } catch (error) {
         console.log("ERROR hello", error);
       }
     };
     fetchUsersData();
+    const interval = setInterval(()=>{
+      fetchUsersData();
+     
+    },2000)
+    return ()=> clearInterval(interval)
   }, []);
 
   const showDataByUser = async(user: User) => {
