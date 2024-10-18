@@ -4,9 +4,10 @@ const router = express.Router();
 
 router.post('/messages', async (req, res) => {
   try {
-    const { senderId, message, roomId } = req.body;
+    const { senderId,receiverId, message, roomId } = req.body;
     const newMessage = new Message({
       senderId,
+      receiverId,
       message,
       roomId
     });
@@ -26,6 +27,7 @@ router.get('/messages/:roomId', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
 router.get('/messages', async (req, res) => {
   try {
     const messages = await Message.find();
