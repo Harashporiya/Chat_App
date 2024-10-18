@@ -105,7 +105,7 @@ const ChatPageUser: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const handleSubmit = useCallback(async () => {
     if (message.trim() && loginUserId) {
-      const newMessage = { senderId: loginUserId, message: message.trim(), roomId: joinRoomId };
+      const newMessage = { senderId: loginUserId,receiverId:sentIdUser, message: message.trim(), roomId: joinRoomId };
       try {
         const response = await axios.post(`${BACKEND_URL}/api/messages`, newMessage);
         socket.emit("send_message", response.data);
