@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, RefreshControl } from "react-native";
-import FooterPage from "./footer";
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from "react-native";
 import axios from "axios";
 import { BACKEND_URL } from "../API_BACKENDS/Backend_API";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { NavigationProp, useNavigation, useRoute } from "@react-navigation/native";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { RouterType } from "./Navigation";
 
 interface User {
   loginUsername: string;
   acceptUserId: string;
-  loginUserId: string ;
+  loginUserId: string;
   _id: string;
   username: string;
   profileImage: string;
@@ -21,124 +20,193 @@ interface UserData {
   allAcceptsUser: User[];
 }
 
+interface Message {
+  _id: string;
+  senderId: string;
+  receiverId: string;
+  message: string;
+  roomId: string;
+  createdAt: string;
+}
+
+interface ConversationStatus {
+  lastMessage: Message;
+  hasUnrepliedMessages: boolean;
+  unreadCount: number;
+}
+
 const ChatApp = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [idUserlogin, setUserIdLogin] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  // const [roomId,setRoomId] = useState<string| null>(null);
-   
+  const [conversationStatuses, setConversationStatuses] = useState<{ [key: string]: ConversationStatus }>({});
+  
   const navigation = useNavigation<NavigationProp<RouterType>>();
-  const route = useRoute();
 
+  
   useEffect(() => {
-    const fetchUsersData = async () => {
+    const fetchData = async () => {
       const userIdLogin = await AsyncStorage.getItem("UserId");
-      const loginUsername = await AsyncStorage.getItem("Username");
       setUserIdLogin(userIdLogin);
 
       try {
-        const res = await axios.get(`${BACKEND_URL}/api/all/accepts`);
-        setUserData(res.data);
        
+        const usersRes = await axios.get(`${BACKEND_URL}/api/all/accepts`);
+        setUserData(usersRes.data);
+
+        
+        const messagesRes = await axios.get(`${BACKEND_URL}/api/messages`);
+        const messages: Message[] = messagesRes.data;
+
+        
+        const statusMap: { [key: string]: ConversationStatus } = {};
+        
+        messages.forEach((message: Message) => {
+          if (message.senderId === userIdLogin || message.receiverId === userIdLogin) {
+            const otherUserId = message.senderId === userIdLogin ? message.receiverId : message.senderId;
+            
+            if (!statusMap[otherUserId] || 
+                new Date(message.createdAt) > new Date(statusMap[otherUserId].lastMessage.createdAt)) {
+              
+              
+              const conversationMessages = messages.filter(msg => 
+                (msg.senderId === userIdLogin && msg.receiverId === otherUserId) ||
+                (msg.receiverId === userIdLogin && msg.senderId === otherUserId)
+              ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+             
+              const hasUnrepliedMessages = message.receiverId === userIdLogin && 
+                !conversationMessages.some(msg => 
+                  msg.senderId === userIdLogin && 
+                  new Date(msg.createdAt) > new Date(message.createdAt)
+                );
+
+                const unreadCount = conversationMessages.filter(msg => 
+                msg.receiverId === userIdLogin &&
+                !conversationMessages.some(reply => 
+                  reply.senderId === userIdLogin && 
+                  new Date(reply.createdAt) > new Date(msg.createdAt)
+                )
+              ).length;
+
+              statusMap[otherUserId] = {
+                lastMessage: message,
+                hasUnrepliedMessages,
+                unreadCount
+              };
+            }
+          }
+        });
+
+        setConversationStatuses(statusMap);
       } catch (error) {
-        console.log("ERROR hello", error);
+        console.log("Error fetching data:", error);
       }
     };
-    fetchUsersData();
-    const interval = setInterval(()=>{
-      fetchUsersData();
-     
-    },2000)
-    return ()=> clearInterval(interval)
+
+    fetchData();
+    const interval = setInterval(fetchData, 2000);
+    return () => clearInterval(interval);
   }, []);
 
   const showDataByUser = async(user: User) => {
-    const filterUsers = (users: User[], userId: string | null) => {
-      return users.filter(user => 
-        (user.loginUserId === userId && user.acceptUserId !== userId) ||
-        (user.acceptUserId === userId && user.loginUserId !== userId)
-      );
-    };
-
     const sentUserId = user.loginUserId === idUserlogin ? user.acceptUserId : user.loginUserId;
-    const loginUserId = await AsyncStorage.getItem("UserId")
+    const loginUserId = await AsyncStorage.getItem("UserId");
    
     try {
-      const res = await axios.post(`${BACKEND_URL}/api/joinroom`,{
-       
-        
+      const res = await axios.post(`${BACKEND_URL}/api/joinroom`, {
         loginUserId,
         sentUserId,
-      })
-      // console.log(res.data)
-        const roomId = res.data.room._id;
-        navigation.navigate("ChatUser", { 
-          id: user._id, 
-          username: user.loginUserId === idUserlogin ? user.username : user.loginUsername,
-          profileImage:user.profileImage,
-          sentIdUser:user.loginUserId === idUserlogin ? user.acceptUserId : user.loginUserId,
-          joinRoomId:roomId,
+      });
+      
+      const roomId = res.data.room._id;
+      navigation.navigate("ChatUser", { 
+        id: user._id,
+        username: user.loginUserId === idUserlogin ? user.username : user.loginUsername,
+        profileImage: user.profileImage,
+        sentIdUser: sentUserId,
+        joinRoomId: roomId,
       });
     } catch (error) {
-      console.log("ERROR hi",error)
+      console.log("Error joining room:", error);
     }
-    // console.log("RoomId hi:", roomId)
-   
   };
 
-   const handel = (sentUserId:string)=>{
-    AsyncStorage.setItem("sentId",sentUserId);
-    // console.log(userIdLogin)
-  }
-  
-  // useEffect(() => {
-  //   const fetchMessages = async () => {
-  //     try {
-  //       const response = await axios.get(`${BACKEND_URL}/api/messages/${joinRoomId}`);
-       
-  //     } catch (error) {
-  //       console.error("Error fetching messages:", error);
-       
-  //     }
-  //   };
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
 
-  //   fetchMessages();
-  // }, []);
+  const getLastMessageText = (otherUserId: string) => {
+    const status = conversationStatuses[otherUserId];
+    if (!status) return "No messages yet";
+    return status.lastMessage.message;
+  };
+
+  const getLastMessageTime = (otherUserId: string) => {
+    const status = conversationStatuses[otherUserId];
+    if (!status) return "";
+    return formatTime(status.lastMessage.createdAt);
+  };
+
   return (
-    <>
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.container}>
-          <Text style={styles.header}>Messages</Text>
-          {userData?.allAcceptsUser.filter(user=>(user.loginUserId === idUserlogin && user.acceptUserId !== idUserlogin)
-          || (user.acceptUserId === idUserlogin && user.loginUserId !== idUserlogin)).map(user => (
-              <TouchableOpacity key={user._id} onPress={() =>{ showDataByUser(user);handel(user._id)}}>
+    <ScrollView style={styles.scrollView}>
+      <View style={styles.container}>
+        <Text style={styles.header}>Messages</Text>
+        {userData?.allAcceptsUser
+          .filter(user => (
+            (user.loginUserId === idUserlogin && user.acceptUserId !== idUserlogin) ||
+            (user.acceptUserId === idUserlogin && user.loginUserId !== idUserlogin)
+          ))
+          .map(user => {
+            const otherUserId = user.loginUserId === idUserlogin ? user.acceptUserId : user.loginUserId;
+            const status = conversationStatuses[otherUserId];
+            
+            return (
+              <TouchableOpacity 
+                key={user._id} 
+                onPress={() => showDataByUser(user)}
+              >
                 <View style={styles.userCard}>
                   <View style={styles.avatar}>
                     <Image 
                       style={styles.image}
-                      source={{
-                        uri: user.profileImage 
-                      }}
+                      source={{ uri: user.profileImage }}
                     />
                     <View style={styles.onlineIndicator} />
                   </View>
                   <View style={styles.userInfo}>
-                    <Text style={styles.username}>{user.loginUserId === idUserlogin ? user.username : user.loginUsername}</Text>
-                    <Text style={styles.lastMessage}>Hey, how are you?</Text>
+                    <Text style={styles.username}>
+                      {user.loginUserId === idUserlogin ? user.username : user.loginUsername}
+                    </Text>
+                    <Text 
+                      style={[
+                        styles.lastMessage,
+                        status?.hasUnrepliedMessages && styles.boldMessage
+                      ]}
+                    >
+                      {getLastMessageText(otherUserId)}
+                    </Text>
                   </View>
                   <View style={styles.timeContainer}>
-                    <Text style={styles.timeText}>2:30 PM</Text>
-                    <View style={styles.unreadBadge}>
-                      <Text style={styles.unreadText}>2</Text>
-                    </View>
+                    <Text style={styles.timeText}>
+                      {getLastMessageTime(otherUserId)}
+                    </Text>
+                    {status?.unreadCount > 0 && (
+                      <View style={styles.unreadBadge}>
+                        <Text style={styles.unreadText}>{status.unreadCount}</Text>
+                      </View>
+                    )}
                   </View>
                 </View>
               </TouchableOpacity>
-            ))}
-        </View>
-      </ScrollView>
-      {/* <FooterPage /> */}
-    </>
+            );
+          })}
+      </View>
+    </ScrollView>
   );
 };
 
@@ -205,6 +273,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
+  boldMessage: {
+    fontWeight: 'bold',
+    color: '#000',
+  },
   timeContainer: {
     alignItems: 'flex-end',
     gap: 8,
@@ -226,7 +298,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 12,
     fontWeight: '600',
-  },
+  }
 });
 
 export default ChatApp;
