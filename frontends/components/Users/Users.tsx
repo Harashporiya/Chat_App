@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Alert } from "react-native";
-import FooterPage from "../footer";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
 import axios from "axios";
-import { BACKEND_URL } from "../../API_BACKENDS/Backend_API";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { NavigationProp, useNavigation, useRoute } from "@react-navigation/native";
+import { BACKEND_URL } from "../../API_BACKENDS/Backend_API";
 import { RouterType } from "../Navigation";
 
 interface User {
@@ -18,97 +17,151 @@ interface UserData {
   allUser: User[];
 }
 
+interface FriendRequest {
+  loginUserId: string;
+  sentFriendId: string;
+  username: string;
+  sentFriendUsername: string;
+}
+
+interface AcceptedUser {
+  loginUserId: string;
+  acceptUserId: string;
+}
+
 const UserPage = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [idUser, setUserId] = useState<string | null>(null);
-  const navigation = useNavigation<NavigationProp<RouterType>>();
-  const [acceptedUsers, setAcceptedUsers] = useState<string[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [existingRequests, setExistingRequests] = useState<FriendRequest[]>([]);
+  const [acceptedUsers, setAcceptedUsers] = useState<AcceptedUser[]>([]);
 
-  const [alreadySentRequest,setAlreadySentRequest] = useState(false);
+  const navigation = useNavigation<NavigationProp<RouterType>>();
 
+ 
   useEffect(() => {
-    const fetchUsersData = async () => {
-      const userId = await AsyncStorage.getItem("UserId");
-      setUserId(userId);
-
+    const fetchInitialData = async () => {
       try {
-        const res = await axios.get(`${BACKEND_URL}/api/all/users`);
-        setUserData(res.data);
+        const userId = await AsyncStorage.getItem("UserId");
+        setCurrentUserId(userId);
+
+       
+        const [usersResponse, requestsResponse, acceptsResponse] = await Promise.all([
+          axios.get(`${BACKEND_URL}/api/all/users`),
+          axios.get(`${BACKEND_URL}/api/sent`),
+          axios.get(`${BACKEND_URL}/api/all/accepts`)
+        ]);
+
+        setUserData(usersResponse.data);
+        setExistingRequests(requestsResponse.data.userdata || []);
+        setAcceptedUsers(acceptsResponse.data.allAcceptsUser || []);
       } catch (error) {
-        console.log("Failed to fetch users data: ", error);
+        console.error("Failed to fetch initial data:", error);
+        Alert.alert("Error", "Failed to load user data. Please try again.");
       }
     };
-    fetchUsersData();
+
+    fetchInitialData();
   }, []);
 
-  const userIdSave = async (friendId1: string, friendUsername: string) => {
-    const loginUserId = await AsyncStorage.getItem("UserId");
-    const username = await AsyncStorage.getItem("Username");
-  
-    if (!loginUserId || !username) {
-      Alert.alert("Error", "User ID or username not found.");
+  const checkFriendshipStatus = (targetUserId: string): 'none' | 'pending' | 'accepted' => {
+    if (!currentUserId) return 'none';
+
+    
+    const isAccepted = acceptedUsers.some(
+      user => (user.loginUserId === currentUserId && user.acceptUserId === targetUserId) ||
+              (user.loginUserId === targetUserId && user.acceptUserId === currentUserId)
+    );
+    if (isAccepted) return 'accepted';
+
+   
+    const isPending = existingRequests.some(
+      request => (request.loginUserId === currentUserId && request.sentFriendId === targetUserId) ||
+                 (request.loginUserId === targetUserId && request.sentFriendId === currentUserId)
+    );
+    if (isPending) return 'pending';
+
+    return 'none';
+  };
+
+  const sendFriendRequest = async (friendId: string, friendUsername: string) => {
+    if (!currentUserId) {
+      Alert.alert("Error", "Please log in to send friend requests.");
       return;
     }
-  
-   
-    // if (acceptedUsers.includes(friendId1)) {
-    //   Alert.alert("Error", "You have already sent a friend request.");
-    //   return;
-    // }
-  
-    setLoadingId(friendId1);
-  
+
+    const username = await AsyncStorage.getItem("Username");
+    if (!username) {
+      Alert.alert("Error", "Username not found.");
+      return;
+    }
+
+    setLoadingId(friendId);
+
     try {
     
-      const response = await axios.get(`${BACKEND_URL}/api/sent`);
+      await Promise.all([
+        axios.post(`${BACKEND_URL}/api/friend/userId`, {
+          loginUserId: currentUserId,
+          username,
+          sentFriendId: friendId,
+          sentFriendUsername: friendUsername,
+        }),
+        axios.post(`${BACKEND_URL}/api/userId`, {
+          loginUserId: currentUserId,
+          username,
+          sentFriendId: friendId,
+          sentFriendUsername: friendUsername,
+        })
+      ]);
 
-     
+    
+      setExistingRequests(prev => [...prev, {
+        loginUserId: currentUserId,
+        sentFriendId: friendId,
+        username,
+        sentFriendUsername: friendUsername
+      }]);
 
-      const existingRequests = response.data.userdata || [];
-  
-      const requestExists = existingRequests.some(
-        (request: { loginUserId: string; sentFriendId: string }) =>(request.loginUserId === loginUserId && request.sentFriendId === friendId1) 
-         || (request.sentFriendId === loginUserId && request.loginUserId === friendId1)
-      );
-  
-      if (requestExists) {
-        Alert.alert("Error", "Friend request already exists.");
-        return;
-      }
-  
-      await axios.post(`${BACKEND_URL}/api/friend/userId`,{
-        loginUserId,
-        username,
-        sentFriendId: friendId1,
-        sentFriendUsername: friendUsername,
-      })
-      await axios.post(`${BACKEND_URL}/api/userId`, {
-        loginUserId,
-        username,
-        sentFriendId: friendId1,
-        sentFriendUsername: friendUsername,
-      });
-  
-     
-      setAcceptedUsers((prev) => [...prev, friendId1]);
       Alert.alert("Success", "Friend request sent!");
     } catch (error) {
       console.error("Error sending friend request:", error);
-      Alert.alert("Error", "An error occurred while sending the request.");
+      Alert.alert("Error", "Failed to send friend request. Please try again.");
     } finally {
-      
       setLoadingId(null);
     }
   };
+
+  const getButtonText = (userId: string) => {
+    if (loadingId === userId) return "Sending...";
+    
+    const status = checkFriendshipStatus(userId);
+    switch (status) {
+      case 'accepted': return "Friends";
+      case 'pending': return "Pending";
+      default: return "Add Friend";
+    }
+  };
+
+  const getButtonStyle = (status: 'none' | 'pending' | 'accepted') => {
+    switch (status) {
+      case 'accepted': return [styles.friendButton, styles.acceptedButton];
+      case 'pending': return [styles.friendButton, styles.pendingButton];
+      default: return styles.friendButton;
+    }
+  };
+
   return (
-    <>
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.container}>
-          <Text style={styles.header}>Messages</Text>
-          {userData?.allUser.filter(user => user._id !== idUser).map(user => (
-            <View key={user._id}>
-              <View style={styles.userCard}>
+    <ScrollView style={styles.scrollView}>
+      <View style={styles.container}>
+        <Text style={styles.header}>Messages</Text>
+        {userData?.allUser
+          .filter(user => user._id !== currentUserId)
+          .map(user => {
+            const status = checkFriendshipStatus(user._id);
+            
+            return (
+              <View key={user._id} style={styles.userCard}>
                 <View style={styles.avatar}>
                   <Image
                     style={styles.image}
@@ -117,28 +170,24 @@ const UserPage = () => {
                 </View>
                 <View style={styles.userInfo}>
                   <Text style={styles.username}>{user.username}</Text>
-                  <Text style={styles.lastMessage}>New Friends request sent</Text>
+                  <Text style={styles.lastMessage}>
+                    {status === 'accepted' ? 'Friends' : 'New friend request sent'}
+                  </Text>
                 </View>
-                <View style={styles.button}>
-                  {/* {!acceptedUsers.includes(user._id) && (   */}
-                    <TouchableOpacity
-                      style={styles.friendButton}
-                      onPress={() => userIdSave(user._id, user.username)}
-                      disabled={loadingId === user._id}
-                    >
-                      <Text style={styles.buttonText}>
-                        {loadingId === user._id ? "Sending..." : "Add friend"}
-                      </Text>
-                    </TouchableOpacity>
-                  {/* )} */}
-                </View>
+                <TouchableOpacity
+                  style={getButtonStyle(status)}
+                  onPress={() => sendFriendRequest(user._id, user.username)}
+                  disabled={status !== 'none' || loadingId === user._id}
+                >
+                  <Text style={styles.buttonText}>
+                    {getButtonText(user._id)}
+                  </Text>
+                </TouchableOpacity>
               </View>
-            </View>
-          ))}
-        </View>
-      </ScrollView>
-      {/* <FooterPage /> */}
-    </>
+            );
+          })}
+      </View>
+    </ScrollView>
   );
 };
 
@@ -194,16 +243,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
   },
-  button: {
-    flexDirection: "row",
-    marginHorizontal: -10,
-  },
   friendButton: {
     backgroundColor: "#4CAF50",
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 8,
-    marginRight: 8,
+  },
+  pendingButton: {
+    backgroundColor: "#FFA500",
+  },
+  acceptedButton: {
+    backgroundColor: "#2196F3",
   },
   buttonText: {
     color: "white",
