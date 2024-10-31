@@ -137,8 +137,8 @@ const ChatPageUser: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const renderMessage = ({ item }: { item: Message }) => (
     <View style={item.senderId === loginUserId ? styles.sentMessage : styles.receivedMessage}>
-      <Text key={item._id}>{item.message}</Text>
-      <Text>{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+      <Text key={item._id} style={styles.messageText}>{item.message}</Text>
+      <Text style={styles.messageTime}>{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
     </View>
   );
 
@@ -233,6 +233,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+   messageTime: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 4,
+  },
+   messageText: {
+    fontSize: 16,
   },
 });
 
