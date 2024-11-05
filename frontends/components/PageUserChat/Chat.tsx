@@ -31,6 +31,7 @@ const ChatPageUser: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [dateCount, setDateCounts] = useState([])
   const isMounted = useRef(true);
   const fetchingRef = useRef(false);
 
@@ -138,10 +139,46 @@ const ChatPageUser: React.FC<{ navigation: any }> = ({ navigation }) => {
   const renderMessage = ({ item }: { item: Message }) => (
     <View style={item.senderId === loginUserId ? styles.sentMessage : styles.receivedMessage}>
       <Text key={item._id} style={styles.messageText}>{item.message}</Text>
+      {/* <Text>{item.createdAt}</Text> */}
       <Text style={styles.messageTime}>{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
     </View>
   );
 
+  
+  useEffect(() => {
+    const renderDateMessageByMessages = async () => {
+      try {
+        const response = await axios.get(`${BACKEND_URL}/api/messages`);
+        
+        
+        const filteredMessages = response.data.filter((message: any) => message.roomId === joinRoomId);
+        
+        
+        const datesCreatedAt = filteredMessages.map((message: any) => 
+          new Date(message.createdAt).toLocaleDateString()
+        );
+        
+        
+        const dateCounts = datesCreatedAt.reduce((acc: { [key: string]: number }, date:any) => {
+          acc[date] = (acc[date] || 0) + 1;
+          return acc;
+        }, {});
+  
+        console.log("Filtered messages:", filteredMessages);
+        console.log("CreatedAt dates:", datesCreatedAt);
+        console.log("Date counts:", dateCounts); 
+        setDateCounts(dateCounts); 
+        
+      } catch (error) {
+        console.log("ERROR", error);
+      }
+    };
+    
+    renderDateMessageByMessages();
+  }, [joinRoomId]);
+  
+  
+  
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -149,6 +186,8 @@ const ChatPageUser: React.FC<{ navigation: any }> = ({ navigation }) => {
       </View>
     );
   }
+
+  
 
   return (
     <View style={styles.container}>
