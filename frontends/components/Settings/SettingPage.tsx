@@ -9,6 +9,7 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  Modal
 } from "react-native";
 import axios from "axios";
 import { BACKEND_URL } from "../../API_BACKENDS/Backend_API";
@@ -188,7 +189,8 @@ const SettingPage = () => {
 
     setLoading(true);
     try {
-      const response = await axios.put(`${BACKEND_URL}/api/update-background-image/${id}`);
+      const response = await axios.put(`${BACKEND_URL}/api/reset-background-image/${id}`);
+      console.log(response.data)
       if (response.data.user) {
         setProfile(response.data.user);
         Alert.alert("Success", "BackGround image reset to default");
@@ -211,33 +213,44 @@ const SettingPage = () => {
     }
   };
 
+  // const showImageOptions = () => {
+  //   Alert.alert(
+  //     "Profile and Background Images",
+  //     "Choose an option",
+  //     [
+  //       {
+  //         text: "Change Profile Picture",
+  //         onPress: pickImage,
+  //       },
+  //       {
+  //         text: "Change Background Image",
+  //         onPress: pickBackgroundImage,
+  //       },
+  //       {
+  //         text: "Reset to profile image Default",
+  //         onPress: resetProfileImage,
+  //       },
+  //       {
+  //         text: "Reset to background image Default",
+  //         onPress: resetBackGroundImage,
+  //       },
+  //       {
+  //         text: "Cancel",
+  //         style: "cancel",
+  //       }
+  //     ]
+  //   );
+  // };
+
+  const [modalVisible, setModalVisible] = useState(false);
+
   const showImageOptions = () => {
-    Alert.alert(
-      "Profile and Background Images",
-      "Choose an option",
-      [
-        {
-          text: "Change Profile Picture",
-          onPress: pickImage,
-        },
-        {
-          text: "Change Background Image",
-          onPress: pickBackgroundImage,
-        },
-        {
-          text: "Reset to profile image Default",
-          onPress: resetProfileImage,
-        },
-        {
-          text: "Reset to background image Default",
-          onPress: resetBackGroundImage,
-        },
-        {
-          text: "Cancel",
-          style: "cancel",
-        }
-      ]
-    );
+    setModalVisible(true);
+  };
+
+  const handleOptionPress = (action: any) => {
+    action();
+    setModalVisible(false);
   };
 
   return (
@@ -247,7 +260,7 @@ const SettingPage = () => {
           <ImageBackground
             source={{ uri: profile.backgroundImage }}
             style={styles.backgroundImage}
-          
+
           >
             {loading && (
               <View>
@@ -259,7 +272,7 @@ const SettingPage = () => {
             <Image
               source={{ uri: profile.profileImage }}
               style={styles.image}
-              />
+            />
             {loading && (
               <View style={styles.profileLoadingOverlay}>
                 <ActivityIndicator size="large" color="#fff" />
@@ -284,6 +297,33 @@ const SettingPage = () => {
       <TouchableOpacity style={styles.btn} onPress={showImageOptions}>
         <Text style={styles.btnText}>Change Images</Text>
       </TouchableOpacity>
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Profile and Background Images</Text>
+            <TouchableOpacity onPress={() => handleOptionPress(pickImage)}>
+              <Text style={styles.option}>Change Profile Picture</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleOptionPress(pickBackgroundImage)}>
+              <Text style={styles.option}>Change Background Image</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleOptionPress(resetProfileImage)}>
+              <Text style={styles.option}>Reset to Profile Image Default</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleOptionPress(resetBackGroundImage)}>
+              <Text style={styles.option}>Reset to Background Image Default</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setModalVisible(false)}>
+              <Text style={[styles.option, styles.cancelOption]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <TouchableOpacity
         style={[styles.btn, styles.logoutBtn]}
@@ -317,6 +357,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
     borderWidth: 4,
     borderColor: "#fff",
+    marginLeft:-70
   },
   profileLoadingOverlay: {
     position: 'absolute',
@@ -333,7 +374,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 80,
     paddingHorizontal: 20,
-    width: '100%',
+    width: '95%',
     backgroundColor: 'white',
     paddingVertical: 20,
     borderRadius: 15,
@@ -374,15 +415,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     borderRadius: 25,
     marginTop: 30,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     width: '80%',
     alignItems: 'center',
 
-   },
+  },
   logoutBtn: {
     backgroundColor: "#FF3B30",
     marginTop: 15,
@@ -392,6 +428,35 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 8,
+    width: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    
+  },
+  option: {
+    fontSize: 16,
+    paddingVertical: 10,
+    color:'#87cefa'
+  },
+  cancelOption: {
+    color: 'red',
+    textAlign: 'center'
+  },
 });
 
 export default SettingPage;
+
+
