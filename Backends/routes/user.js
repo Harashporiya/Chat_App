@@ -205,4 +205,31 @@ router.put("/reset-profile-image/:id", async (req, res) => {
     }
 });
 
+// Reset Back ground  Image
+router.put("/update-background-image/:id", async (req, res) => {
+    try {
+        const userId = req.params.id;
+        
+        const defaultImage = "https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop"
+        
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { backgroundImage: defaultImage },
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        return res.status(200).json({
+            message: "Back ground image reset to default",
+            user: updatedUser
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Failed to reset back ground image" });
+    }
+});
 module.exports = router;
