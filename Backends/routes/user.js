@@ -206,7 +206,7 @@ router.put("/reset-profile-image/:id", async (req, res) => {
 });
 
 // Reset Back ground  Image
-router.put("/update-background-image/:id", async (req, res) => {
+router.put("/reset-background-image/:id", async (req, res) => {
     try {
         const userId = req.params.id;
         
