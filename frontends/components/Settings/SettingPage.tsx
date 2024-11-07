@@ -182,6 +182,23 @@ const SettingPage = () => {
       setLoading(false);
     }
   };
+  const resetBackGroundImage = async () => {
+    const id = await AsyncStorage.getItem("UserId");
+    if (!id) return;
+
+    setLoading(true);
+    try {
+      const response = await axios.put(`${BACKEND_URL}/api/update-background-image/${id}`);
+      if (response.data.user) {
+        setProfile(response.data.user);
+        Alert.alert("Success", "BackGround image reset to default");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to reset back ground image");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const tokenRemove = async () => {
     try {
@@ -196,24 +213,28 @@ const SettingPage = () => {
 
   const showImageOptions = () => {
     Alert.alert(
-      "Profile Images",
+      "Profile and Background Images",
       "Choose an option",
       [
         {
           text: "Change Profile Picture",
-          onPress: pickImage
+          onPress: pickImage,
         },
         {
           text: "Change Background Image",
-          onPress: pickBackgroundImage
+          onPress: pickBackgroundImage,
         },
         {
-          text: "Reset to Default",
-          onPress: resetProfileImage
+          text: "Reset to profile image Default",
+          onPress: resetProfileImage,
+        },
+        {
+          text: "Reset to background image Default",
+          onPress: resetBackGroundImage,
         },
         {
           text: "Cancel",
-          style: "cancel"
+          style: "cancel",
         }
       ]
     );
@@ -226,7 +247,7 @@ const SettingPage = () => {
           <ImageBackground
             source={{ uri: profile.backgroundImage }}
             style={styles.backgroundImage}
-            onError={(error) => console.log("Background Image Error:", error.nativeEvent)}
+          
           >
             {loading && (
               <View>
@@ -238,8 +259,7 @@ const SettingPage = () => {
             <Image
               source={{ uri: profile.profileImage }}
               style={styles.image}
-              onError={(error) => console.log("Profile Image Error:", error.nativeEvent)}
-            />
+              />
             {loading && (
               <View style={styles.profileLoadingOverlay}>
                 <ActivityIndicator size="large" color="#fff" />
@@ -361,7 +381,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     width: '80%',
     alignItems: 'center',
-  },
+
+   },
   logoutBtn: {
     backgroundColor: "#FF3B30",
     marginTop: 15,
