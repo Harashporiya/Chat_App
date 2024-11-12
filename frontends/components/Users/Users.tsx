@@ -84,7 +84,7 @@ const UserPage = () => {
     return 'none';
   };
 
-  const sendFriendRequest = async (friendId: string, friendUsername: string) => {
+  const sendFriendRequest = async (friendId: string, friendUsername: string,profileImage:string) => {
     if (!currentUserId) {
       Alert.alert("Error", "Please log in to send friend requests.");
       return;
@@ -100,20 +100,23 @@ const UserPage = () => {
 
     try {
     
-      await Promise.all([
+   await Promise.all([
         axios.post(`${BACKEND_URL}/api/friend/userId`, {
           loginUserId: currentUserId,
           username,
           sentFriendId: friendId,
           sentFriendUsername: friendUsername,
+          profileImage:profileImage
         }),
         axios.post(`${BACKEND_URL}/api/userId`, {
           loginUserId: currentUserId,
           username,
           sentFriendId: friendId,
           sentFriendUsername: friendUsername,
+          profileImage:profileImage,
         })
       ]);
+     
 
     
       setExistingRequests(prev => [...prev, {
@@ -176,7 +179,7 @@ const UserPage = () => {
                 </View>
                 <TouchableOpacity
                   style={getButtonStyle(status)}
-                  onPress={() => sendFriendRequest(user._id, user.username)}
+                  onPress={() => sendFriendRequest(user._id, user.username,user.profileImage)}
                   disabled={status !== 'none' || loadingId === user._id}
                 >
                   <Text style={styles.buttonText}>
