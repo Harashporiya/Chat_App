@@ -49,10 +49,7 @@ const SettingPage = () => {
     const id = await AsyncStorage.getItem("UserId");
     try {
       const res = await axios.get(`${BACKEND_URL}/api/user/${id}`);
-      console.log("Profile Data:", {
-        profileImage: res.data.UserIdBy.profileImage,
-        backgroundImage: res.data.UserIdBy.backgroundImage
-      });
+      // console.log(res.data)
       setProfile(res.data.UserIdBy);
     } catch (error) {
       console.log("ERROR", error);
@@ -190,7 +187,7 @@ const SettingPage = () => {
     setLoading(true);
     try {
       const response = await axios.put(`${BACKEND_URL}/api/reset-background-image/${id}`);
-      console.log(response.data)
+      // console.log(response.data)
       if (response.data.user) {
         setProfile(response.data.user);
         Alert.alert("Success", "BackGround image reset to default");
@@ -260,24 +257,29 @@ const SettingPage = () => {
           <ImageBackground
             source={{ uri: profile.backgroundImage }}
             style={styles.backgroundImage}
-
+          
           >
-            {loading && (
+            
+            {/* {loading && (
               <View>
                 <ActivityIndicator size="large" color="#fff" />
               </View>
-            )}
+            )} */}
           </ImageBackground>
           <TouchableOpacity onPress={showImageOptions}>
-            <Image
+           <View style={styles.avatar}>
+           <Image
               source={{ uri: profile.profileImage }}
               style={styles.image}
+              
             />
-            {loading && (
+            <View style={styles.onlineIndicator} />
+           </View>
+            {/* {loading && (
               <View style={styles.profileLoadingOverlay}>
-                <ActivityIndicator size="large" color="#fff" />
+                <ActivityIndicator style={{marginLeft:-70}} size="large" color="#fff" />
               </View>
-            )}
+            )} */}
           </TouchableOpacity>
 
           <View style={styles.infoContainer}>
@@ -352,12 +354,8 @@ const styles = StyleSheet.create({
     width: 140,
     height: 140,
     borderRadius: 70,
-    position: "absolute",
-    top: -70,
-    zIndex: 1,
     borderWidth: 4,
     borderColor: "#fff",
-    marginLeft:-70
   },
   profileLoadingOverlay: {
     position: 'absolute',
@@ -454,6 +452,27 @@ const styles = StyleSheet.create({
   cancelOption: {
     color: 'red',
     textAlign: 'center'
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#4CAF50',
+    borderWidth: 3,
+    borderColor: 'white',
+    zIndex: 2,
+
+  },
+  avatar: {
+    position: 'relative',
+    width: 140,
+    height: 140,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // marginTop: -70,
   },
 });
 
