@@ -17,18 +17,27 @@ interface User {
 interface UserData {
   message: string;
   userdata: User[];
+  allUser: User[];
 }
+
+
 
 const NotificationsPage = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-
+  // const [allUser, setAllusers] = useState<UserData | null>(null);
+  // const [acceptuser, setAcceptedUser] = useState();
   const fetchUsersData = async () => {
     const loggedInUserId = await AsyncStorage.getItem("UserId");
     setUserId(loggedInUserId);
 
     try {
+      // const resUsersAll = await axios.get(`${BACKEND_URL}/api/all/users`);
+      // const usersRes = await axios.get(`${BACKEND_URL}/api/all/accepts`);
+      // setAcceptedUser(usersRes.data)
+      // setAllusers(resUsersAll.data)
+      // console.log(resUsersAll.data)
       const res = await axios.get(`${BACKEND_URL}/api/friend/sent`);
       const filteredRequests = res.data.userdata.filter((request: User) => request.sentFriendId === loggedInUserId);
       setUserData({ ...res.data, userdata: filteredRequests });
@@ -46,9 +55,10 @@ const NotificationsPage = () => {
     fetchUsersData().finally(() => setRefreshing(false));
   }, []);
 
-  const handleAccept = async (username: string, acceptUserId: string) => {
+  const handleAccept = async (username: string, acceptUserId: string,profileImage:string) => {
     const loginUserId = await AsyncStorage.getItem("UserId");
     const loginUsername = await AsyncStorage.getItem("Username");
+ 
 
     try {
       const res = await axios.post(`${BACKEND_URL}/api/accepts`, {
@@ -56,8 +66,14 @@ const NotificationsPage = () => {
         acceptUserId,
         loginUsername,
         loginUserId,
+        profileImage
+        // userIdProfileImage:allUser?.allUser.filter((userId:any)=>{
+        //   userId._id === acceptUserId || userId._id === loginUsername
+        // })
       });
-     
+
+      console.log(res.data)
+      
       Alert.alert("Success", "Friend request accepted");
     } catch (error) {
       console.log("ERROR", error);
@@ -112,7 +128,7 @@ const NotificationsPage = () => {
                   <View style={styles.button}>
                     <TouchableOpacity
                       style={styles.acceptButton}
-                      onPress={() => (handleAccept(user.username, user.loginUserId),accepts(user._id))}
+                      onPress={() => (handleAccept(user.username, user.loginUserId,user.profileImage),accepts(user._id))}
                     >
                       <Text style={styles.buttonText}>ACCEPT</Text>
                     </TouchableOpacity>
