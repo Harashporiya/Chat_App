@@ -9,7 +9,8 @@ const acceptUserRoute = require("./routes/acceptUser");
 const sendFriendRequest = require("./routes/sendFriendRequest");
 const requestUser = require("./routes/requestAccepts");
 const joinRoomRouter = require("./routes/joinRoomIds");
-const messageRouter = require("./routes/message")
+const messageRouter = require("./routes/message");
+const User = require("./model/user");
 
 
 const app = express();
@@ -48,8 +49,15 @@ const io = new Server(server, {
   }
 });
 
+// const app1 = 'http://localhost:3003'
+
+
+
 // Socket.io event handlers
 io.on("connection", (socket) => {
+  // const userId = socket.handshake.auth.userId;
+  // console.log(socket)
+  // console.log(`User ${userId} connected`);
   console.log("User connected:", socket.id);
 
   socket.on("join_room", ({ joinRoomId}) => {
@@ -70,5 +78,40 @@ io.on("connection", (socket) => {
   });
 });
 
+const ioi= new Server(server);
+ioi.on("connection", async(socket) => {
+  const userId = socket.handshake.auth.userId;
+  await User.findByIdAndUpdate({_id:userId},{$set:{is_online:1}});
+  // console.log(socket)
+  console.log(`User ${userId} connected`);
+  console.log("User connected:", socket.id);
+
+  socket.on("disconnect", async() => {
+    const userId = socket.handshake.auth.userId;
+    console.log("User disconnected:", socket.id);
+    await User.findByIdAndUpdate({_id:userId},{$set:{is_online:0}});
+  });
+});
+
+// Authorization
+app.get("/user/data", async (req, res) => {
+  const authHeader = req.headers.authorization;
+  console.log(authHeader)
+  if (!authHeader) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const token = authHeader.split(' ')[1]; 
+  try {
+    const decoded = jwt.verify(token, process.env.secretKey);
+    const user = await User.findOne({_id:decoded.user}); 
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    return res.json({ email: user.email, username: user.username });
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
+});
 // Start the server
 server.listen(PORT, () => console.log(`Server started on port ${PORT}`));
