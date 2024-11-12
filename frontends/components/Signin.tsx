@@ -5,6 +5,8 @@ import { BACKEND_URL } from '../API_BACKENDS/Backend_API'
 import { NavigationProp, useNavigation } from '@react-navigation/native'
 import { RouterType } from './Navigation'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { io, Socket } from 'socket.io-client'
+import CookieManager from '@react-native-cookies/cookies';
 const Signin = () => {
     const [email, setEmail] = useState('')
     const [password, setPassowrd] = useState('')
@@ -19,6 +21,8 @@ const Signin = () => {
                 email,
                 password
             })
+            // CookieManager.set("authorization",res.data.token)
+           // initSocketConnection()
             AsyncStorage.setItem("UserId", res.data.user._id)
             AsyncStorage.setItem("Username", res.data.user.username)
             AsyncStorage.setItem("token", res.data.token)
@@ -34,6 +38,32 @@ const Signin = () => {
             
         }
     }
+    // async function initSocketConnection() {
+    //     try {
+    //       let userId = await AsyncStorage.getItem('UserId');
+         
+      
+    //       const socket: Socket = io(BACKEND_URL, {
+    //         auth: {
+    //           userId,
+    //         },
+    //       });
+      
+    //       // Socket.IO event handlers
+    //       socket.on('connect', () => {
+    //         console.log('Connected to Socket.IO server with userId:', userId);
+    //       });
+      
+    //       socket.on('disconnect', () => {
+    //         console.log('Disconnected from Socket.IO server');
+    //       });
+      
+    //       return socket;
+    //     } catch (error) {
+    //       console.error('Error initializing Socket.IO connection:', error);
+    //       throw error;
+    //     }
+    //   }
     return (
         <>
             <View style={styles.container}>
