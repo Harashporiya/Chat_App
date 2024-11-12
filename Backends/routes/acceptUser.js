@@ -3,12 +3,12 @@ const AcceptUser = require("../model/acceptUser");
 const router = express.Router();
 
 router.post("/userId", async (req, res) => {
-    const { loginUserId, username, sentFriendId, sentFriendUsername } = req.body;
+    const { loginUserId, username, sentFriendId, sentFriendUsername,profileImage } = req.body;
     
     // console.log(req.body);
     
     try {
-        const userNew = await AcceptUser.create({ loginUserId, username, sentFriendId, sentFriendUsername });
+        const userNew = await AcceptUser.create({ loginUserId, username, sentFriendId, sentFriendUsername,profileImage });
         // console.log(userNew);
         return res.status(200).json({ message: "User id stored successfully", userNew });
     } catch (error) {
