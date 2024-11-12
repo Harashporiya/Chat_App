@@ -4,9 +4,9 @@ const sendFriend = require("../model/sendFriendRequest");
 const router = express.Router();
 
 router.post("/userId", async(req,res)=>{
-    const {loginUserId, username, sentFriendId, sentFriendUsername} = req.body;
+    const {loginUserId, username, sentFriendId, sentFriendUsername,profileImage} = req.body;
     try {
-        const userNew =  new sendFriend({loginUserId, username, sentFriendId, sentFriendUsername});
+        const userNew =  new sendFriend({loginUserId, username, sentFriendId, sentFriendUsername,profileImage});
         await userNew.save();
         return res.status(200).json({message:"User id store successfull", userNew})
     } catch (error) {
