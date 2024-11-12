@@ -35,14 +35,50 @@ interface ConversationStatus {
   unreadCount: number;
 }
 
+interface UserID {
+  _id: string;
+  username: string;
+  profileImage: string;
+  is_online: number;
+}
+
+interface UserData1 {
+  message: string;
+  allUser: UserID[];
+}
+
 const ChatApp = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [idUserlogin, setUserIdLogin] = useState<string | null>(null);
   const [conversationStatuses, setConversationStatuses] = useState<{ [key: string]: ConversationStatus }>({});
+  const [onlineUsers, setOnlineUsers] = useState<{ [key: string]: boolean }>({});
   
   const navigation = useNavigation<NavigationProp<RouterType>>();
 
-  
+  const [statusCheck, setStatusCheck] = useState<UserData1 | null>(null);
+
+  useEffect(() => {
+    const fetchDataUser = async () => {
+      try {
+        const res = await axios.get(`${BACKEND_URL}/api/all/users`);
+        setStatusCheck(res.data);
+        
+      
+        const onlineStatusMap: { [key: string]: boolean } = {};
+        res.data.allUser.forEach((user: UserID) => {
+          onlineStatusMap[user._id] = user.is_online === 1;
+        });
+        setOnlineUsers(onlineStatusMap);
+      } catch (error) {
+        console.log("ERROR", error);
+      }
+    };
+    fetchDataUser();
+    
+ 
+    const interval = setInterval(fetchDataUser, 5000);
+    return () => clearInterval(interval);
+  }, []);
   useEffect(() => {
     const fetchData = async () => {
       const userIdLogin = await AsyncStorage.getItem("UserId");
@@ -52,6 +88,7 @@ const ChatApp = () => {
        
         const usersRes = await axios.get(`${BACKEND_URL}/api/all/accepts`);
         setUserData(usersRes.data);
+        // console.log(usersRes.data)
 
         
         const messagesRes = await axios.get(`${BACKEND_URL}/api/messages`);
@@ -99,7 +136,7 @@ const ChatApp = () => {
 
         setConversationStatuses(statusMap);
       } catch (error) {
-        console.log("Error fetching data:", error);
+        console.log("Error fetching data: harash", error);
       }
     };
 
@@ -154,59 +191,63 @@ const ChatApp = () => {
 
   return (
     <ScrollView style={styles.scrollView}>
-      <View style={styles.container}>
-        <Text style={styles.header}>Messages</Text>
-        {userData?.allAcceptsUser
-          .filter(user => (
-            (user.loginUserId === idUserlogin && user.acceptUserId !== idUserlogin) ||
-            (user.acceptUserId === idUserlogin && user.loginUserId !== idUserlogin)
-          ))
-          .map(user => {
-            const otherUserId = user.loginUserId === idUserlogin ? user.acceptUserId : user.loginUserId;
-            const status = conversationStatuses[otherUserId];
-            
-            return (
-              <TouchableOpacity 
-                key={user._id} 
-                onPress={() => showDataByUser(user)}
-              >
-                <View style={styles.userCard}>
-                  <View style={styles.avatar}>
-                    <Image 
-                      style={styles.image}
-                      source={{ uri: user.profileImage }}
-                    />
-                    <View style={styles.onlineIndicator} />
-                  </View>
-                  <View style={styles.userInfo}>
-                    <Text style={styles.username}>
-                      {user.loginUserId === idUserlogin ? user.username : user.loginUsername}
-                    </Text>
-                    <Text 
-                      style={[
-                        styles.lastMessage,
-                        status?.hasUnrepliedMessages && styles.boldMessage
-                      ]}
-                    >
-                      {getLastMessageText(otherUserId)}
-                    </Text>
-                  </View>
-                  <View style={styles.timeContainer}>
-                    <Text style={styles.timeText}>
-                      {getLastMessageTime(otherUserId)}
-                    </Text>
-                    {status?.unreadCount > 0 && (
-                      <View style={styles.unreadBadge}>
-                        <Text style={styles.unreadText}>{status.unreadCount}</Text>
-                      </View>
-                    )}
-                  </View>
+    <View style={styles.container}>
+      <Text style={styles.header}>Messages</Text>
+      {userData?.allAcceptsUser
+        .filter(user => (
+          (user.loginUserId === idUserlogin && user.acceptUserId !== idUserlogin) ||
+          (user.acceptUserId === idUserlogin && user.loginUserId !== idUserlogin)
+        ))
+        .map(user => {
+          const otherUserId = user.loginUserId === idUserlogin ? user.acceptUserId : user.loginUserId;
+          const status = conversationStatuses[otherUserId];
+          const isOnline = onlineUsers[otherUserId];
+          
+          return (
+            <TouchableOpacity 
+              key={user._id} 
+              onPress={() => showDataByUser(user)}
+            >
+              <View style={styles.userCard}>
+                <View style={styles.avatar}>
+                  <Image 
+                    style={styles.image}
+                    source={{ uri: user.profileImage }}
+                  />
+                  <View style={[
+                    styles.onlineIndicator,
+                    { backgroundColor: isOnline ? '#4CAF50' : '#FF3B30' }
+                  ]} />
                 </View>
-              </TouchableOpacity>
-            );
-          })}
-      </View>
-    </ScrollView>
+                <View style={styles.userInfo}>
+                  <Text style={styles.username}>
+                    {user.loginUserId === idUserlogin ? user.username : user.loginUsername}
+                  </Text>
+                  <Text 
+                    style={[
+                      styles.lastMessage,
+                      status?.hasUnrepliedMessages && styles.boldMessage
+                    ]}
+                  >
+                    {getLastMessageText(otherUserId)}
+                  </Text>
+                </View>
+                <View style={styles.timeContainer}>
+                  <Text style={styles.timeText}>
+                    {getLastMessageTime(otherUserId)}
+                  </Text>
+                  {status?.unreadCount > 0 && (
+                    <View style={styles.unreadBadge}>
+                      <Text style={styles.unreadText}>{status.unreadCount}</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+    </View>
+  </ScrollView>
   );
 };
 
@@ -255,7 +296,6 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#4CAF50',
     borderWidth: 2,
     borderColor: 'white',
   },
