@@ -31,24 +31,68 @@ const ChatPageUser: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [dateCount, setDateCounts] = useState([])
+  const [dateCount, setDateCounts] = useState([]);
   const isMounted = useRef(true);
   const fetchingRef = useRef(false);
+  const socketRef = useRef<Socket | null>(null);
 
-  const socket: Socket = useMemo(() => io(BACKEND_URL), []);
+
+  const getUserId = async () => {
+    try {
+      const userId = await AsyncStorage.getItem('UserId');
+      return userId;
+    } catch (error) {
+      console.error('Error getting userId:', error);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    const initializeSocket = async () => {
+      const userId = await getUserId();
+      if (userId) {
+        socketRef.current = io(BACKEND_URL, {
+          auth: {
+            userId
+          }
+        });
+
+        socketRef.current.on("connect", () => {
+          console.log("User connected with id:", socketRef.current?.id);
+        });
+
+        socketRef.current.on("receive_message", (data: Message) => {
+          console.log("Received message:", data);
+          if (isMounted.current) {
+            setMessages((prevMessages) => [data, ...prevMessages]);
+          }
+        });
+
+        if (joinRoomId) {
+          socketRef.current.emit("join_room", { joinRoomId });
+        }
+      }
+    };
+
+    initializeSocket();
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off("connect");
+        socketRef.current.off("receive_message");
+        socketRef.current.disconnect();
+      }
+    };
+  }, [joinRoomId]);
 
   const getLoginUserId = useCallback(async () => {
-    const storedLoginUserId = await AsyncStorage.getItem('UserId');
+    const storedLoginUserId = await getUserId();
     if (isMounted.current) {
       setLoginUserId(storedLoginUserId);
-      if (joinRoomId) {
-        socket.emit("join_room", { joinRoomId });
-      }
     }
-  }, [joinRoomId, socket]);
+  }, []);
 
   const fetchMessages = useCallback(async () => {
-    
     if (fetchingRef.current) return;
     
     fetchingRef.current = true;
@@ -73,22 +117,8 @@ const ChatPageUser: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   useEffect(() => {
     getLoginUserId();
-
-    socket.on("connect", () => {
-      console.log("User connected with id:", socket.id);
-    });
-
-    socket.on("receive_message", (data: Message) => {
-      console.log("Received message:", data);
-      if (isMounted.current) {
-        setMessages((prevMessages) => [data, ...prevMessages]);
-      }
-    });
-
-    
     fetchMessages();
 
-    
     const intervalId = setInterval(() => {
       if (isMounted.current && !fetchingRef.current) {
         fetchMessages();
@@ -98,18 +128,15 @@ const ChatPageUser: React.FC<{ navigation: any }> = ({ navigation }) => {
     return () => {
       isMounted.current = false;
       clearInterval(intervalId);
-      socket.off("connect");
-      socket.off("receive_message");
-      socket.disconnect();
     };
-  }, [socket, getLoginUserId, fetchMessages]);
+  }, [getLoginUserId, fetchMessages]);
 
   const handleSubmit = useCallback(async () => {
-    if (message.trim() && loginUserId) {
-      const newMessage = { senderId: loginUserId,receiverId:sentIdUser, message: message.trim(), roomId: joinRoomId };
+    if (message.trim() && loginUserId && socketRef.current) {
+      const newMessage = { senderId: loginUserId, receiverId: sentIdUser, message: message.trim(), roomId: joinRoomId };
       try {
         const response = await axios.post(`${BACKEND_URL}/api/messages`, newMessage);
-        socket.emit("send_message", response.data);
+        socketRef.current.emit("send_message", response.data);
         
         if (isMounted.current) {
           setMessages((prevMessages) => [response.data, ...prevMessages]);
@@ -121,7 +148,7 @@ const ChatPageUser: React.FC<{ navigation: any }> = ({ navigation }) => {
         }
       }
     }
-  }, [message, loginUserId, joinRoomId, socket]);
+  }, [message, loginUserId, joinRoomId, sentIdUser]);
 
   
   
